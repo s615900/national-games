@@ -12,13 +12,17 @@ const adminEmails = (process.env.ADMIN_EMAILS ?? "")
 
 // 本機開發專用：免 Google 直接以管理員登入。
 // 只有「npm run dev」且 .env.local 設了 DEV_LOGIN=1 才會開；正式環境（NODE_ENV=production）永遠是關的。
+const DEV_PHOTOGRAPHER_EMAIL = "dev-photographer@localhost.test";
 export const devLoginEnabled = process.env.NODE_ENV === "development" && process.env.DEV_LOGIN === "1" && adminEmails.length > 0;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google,
     ...(devLoginEnabled
-      ? [Credentials({ id: "dev", name: "開發模式", credentials: {}, authorize: async () => ({ email: adminEmails[0], name: "開發模式管理員" }) })]
+      ? [
+          Credentials({ id: "dev", name: "開發模式", credentials: {}, authorize: async () => ({ email: adminEmails[0], name: "開發模式管理員" }) }),
+          Credentials({ id: "dev-photographer", name: "開發模式攝影師", credentials: {}, authorize: async () => ({ email: DEV_PHOTOGRAPHER_EMAIL, name: "開發模式攝影師" }) }),
+        ]
       : []),
   ],
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
@@ -30,11 +34,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!email || profile?.email_verified === false) return false;
       const users = (await getDb()).collection("users");
       const isAdmin = adminEmails.includes(email);
+      const isDevPhotographer = devLoginEnabled && email === DEV_PHOTOGRAPHER_EMAIL; // 只在本機開發模式才會是一般攝影師
       await users.updateOne(
         { email },
         {
-          $set: { name: user.name ?? "", image: user.image ?? "", lastLoginAt: new Date(), ...(isAdmin && { role: "admin" }) },
-          $setOnInsert: { createdAt: new Date(), ...(!isAdmin && { role: "photographer_pending" }), suspended: false },
+          $set: { name: user.name ?? "", image: user.image ?? "", lastLoginAt: new Date(), ...(isAdmin && { role: "admin" }), ...(isDevPhotographer && { role: "photographer" }) },
+          $setOnInsert: { createdAt: new Date(), ...(!isAdmin && !isDevPhotographer && { role: "photographer_pending" }), suspended: false },
         },
         { upsert: true }
       );
