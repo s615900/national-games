@@ -1,29 +1,28 @@
 "use server";
 import { ObjectId } from "mongodb";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guard";
 import { getDb } from "@/lib/mongodb";
+import { parseProfile } from "@/lib/profile";
 import { sports } from "@/lib/sports";
 
 const text = (fd: FormData, key: string, max: number) => String(fd.get(key) ?? "").trim().slice(0, max);
 
-// 攝影師改自己的資料：身分一律取自登入狀態，不信任表單
+// 改自己的資料：身分一律取自登入狀態，不信任表單。填不完整就退回並說明原因
 export async function saveProfile(formData: FormData) {
   const session = await requireRole("photographer_pending"); // 申請時就要能填
-  const slugs = new Set(sports.map((s) => s.slug));
-  const picked = formData.getAll("sports").map(String).filter((s) => slugs.has(s));
-  await (await getDb()).collection("users").updateOne(
-    { _id: new ObjectId(session.user.id) },
-    { $set: {
-      region: text(formData, "region", 20),
-      bio: text(formData, "bio", 300),
-      instagram: text(formData, "instagram", 40).replace(/^@/, ""),
-      sports: picked,
-    } }
-  );
+  const from = formData.get("from") === "/pending" ? "/pending" : "/dashboard";
+  const result = parseProfile(formData);
+  if ("error" in result) redirect(`${from}?error=${encodeURIComponent(result.error)}`);
+  const users = (await getDb()).collection("users");
+  const _id = new ObjectId(session.user.id);
+  const me = await users.findOne({ _id }, { projection: { agreedAt: 1 } });
+  await users.updateOne({ _id }, { $set: { ...result.data, agreedAt: me?.agreedAt ?? new Date(), profileUpdatedAt: new Date() } });
   revalidatePath("/dashboard");
   revalidatePath("/pending");
   revalidatePath("/admin/users");
+  redirect(`${from}?saved=1`);
 }
 
 // 新增的作品一律是「待審核」，通過審核才會公開

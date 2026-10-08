@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { requireRole } from "@/lib/guard";
 import { getDb } from "@/lib/mongodb";
 import { ROLES } from "@/lib/roles";
+import { toFullProfile } from "@/lib/data";
 import { getSport } from "@/lib/sports";
 import { setRole, setSuspended } from "./actions";
 
@@ -29,18 +30,25 @@ async function AdminUsersPageContent() {
           {users.map((u) => {
             const id = u._id.toString();
             const isMe = id === session.user.id;
+            const pf = toFullProfile(u);
             return (
               <tr key={id} className="border-b">
                 <td className="p-2">{u.name}</td>
                 <td className="p-2">{u.email}</td>
                 <td className="p-2 text-xs text-gray-600">
-                  {u.region || u.bio || u.instagram || u.sports?.length ? (
-                    <>
-                      <p>{[u.region, (u.sports ?? []).map((x: string) => getSport(x)?.name).join("、")].filter(Boolean).join("・")}</p>
-                      {u.instagram && <p>IG：@{u.instagram}</p>}
-                      {u.bio && <p className="mt-1 max-w-xs">{u.bio}</p>}
-                    </>
-                  ) : "（未填）"}
+                  {pf.realName ? (
+                    <div className="space-y-0.5">
+                      <p><strong>{pf.realName}</strong>・{pf.phone}</p>
+                      <p>顯示名稱：{pf.name}・{pf.region}{pf.organization && `・${pf.organization}`}{pf.experience && `・年資 ${pf.experience}`}</p>
+                      <p>擅長：{pf.sports.map((x) => getSport(x)?.name).join("、")}</p>
+                      {pf.gear && <p>器材：{pf.gear}</p>}
+                      {(pf.instagram || pf.facebook || pf.website) && (
+                        <p>連結：{[pf.instagram && `IG @${pf.instagram}`, pf.facebook && "Facebook", pf.website && "網站"].filter(Boolean).join("、")}</p>
+                      )}
+                      {pf.bio && <p className="max-w-xs">{pf.bio}</p>}
+                      {pf.agreedAt && <p className="text-gray-400">同意條款：{new Date(pf.agreedAt).toLocaleDateString("zh-TW")}</p>}
+                    </div>
+                  ) : "（尚未填寫）"}
                 </td>
                 <td className="p-2">
                   {isMe ? ROLE_LABEL[u.role] : (

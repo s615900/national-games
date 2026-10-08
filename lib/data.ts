@@ -8,7 +8,9 @@ async function getDb() {
   return getMongoDb();
 }
 
-export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string };
+export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string };
+// 完整資料（含不公開欄位）：只能給本人和管理員看
+export type FullProfile = Photographer & { realName: string; phone: string; email: string; agreedAt?: Date };
 export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string };
 
 // 能投稿的身分；只有這些人會出現在攝影師頁
@@ -17,13 +19,25 @@ const POSTING_ROLES = ["photographer", "reviewer", "admin"];
 const toId = (id: string) => (ObjectId.isValid(id) ? new ObjectId(id) : null);
 
 function toPhotographer(u: Document): Photographer {
-  return { id: u._id.toString(), name: u.name ?? "", region: u.region ?? "", bio: u.bio ?? "", sports: u.sports ?? [], instagram: u.instagram || undefined };
+  return {
+    id: u._id.toString(),
+    name: u.displayName || u.name || "",
+    region: u.region ?? "",
+    bio: u.bio ?? "",
+    sports: u.sports ?? [],
+    instagram: u.instagram || undefined,
+    facebook: u.facebook || undefined,
+    website: u.website || undefined,
+    organization: u.organization || undefined,
+    experience: u.experience || undefined,
+    gear: u.gear || undefined,
+  };
 }
 
 async function toWorks(docs: Document[]): Promise<Work[]> {
   const ids = [...new Set(docs.map((d) => String(d.photographerId)))].map(toId).filter((x) => x !== null);
   const users = await (await getDb()).collection("users").find({ _id: { $in: ids } }).toArray();
-  const names = new Map(users.map((u) => [u._id.toString(), u.name ?? ""]));
+  const names = new Map(users.map((u) => [u._id.toString(), u.displayName || u.name || ""]));
   return docs.map((d) => ({
     id: d._id.toString(),
     title: d.title ?? "",
@@ -100,8 +114,13 @@ export async function listWorksForBackend(opts: { status?: string; photographerI
   return toWorks(docs);
 }
 
+export function toFullProfile(u: Document): FullProfile {
+  return { ...toPhotographer(u), realName: u.realName ?? "", phone: u.phone ?? "", email: u.email ?? "", agreedAt: u.agreedAt };
+}
+
+// 填寫表單用：只給登入者本人看自己的完整資料
 export async function getProfile(userId: string) {
   const _id = toId(userId);
   const doc = _id && (await (await getDb()).collection("users").findOne({ _id }));
-  return doc ? toPhotographer(doc) : null;
+  return doc ? toFullProfile(doc) : null;
 }
