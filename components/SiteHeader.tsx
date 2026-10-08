@@ -1,4 +1,18 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
+import { auth } from "@/auth";
+
+// 登入後顯示「我的後台」，沒登入顯示登入按鈕（要讀登入狀態，所以包在 Suspense 裡）
+async function AuthLink() {
+  await connection();
+  const session = await auth();
+  return session?.user ? (
+    <Link href="/dashboard" className="rounded-lg bg-black px-3 py-1.5 text-white">我的後台</Link>
+  ) : (
+    <Link href="/login" className="rounded-lg bg-black px-3 py-1.5 text-white">登入／註冊</Link>
+  );
+}
 
 export function SiteHeader() {
   return (
@@ -8,7 +22,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-4 text-sm sm:gap-6">
           <Link href="/works" className="hover:underline">作品</Link>
           <Link href="/photographers" className="hover:underline">攝影師</Link>
-          <Link href="/login" className="rounded-lg bg-black px-3 py-1.5 text-white">登入／註冊</Link>
+          <Suspense fallback={<span className="rounded-lg bg-gray-200 px-3 py-1.5 text-transparent">登入／註冊</span>}><AuthLink /></Suspense>
         </nav>
       </div>
     </header>

@@ -9,7 +9,7 @@ async function getDb() {
 }
 
 export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string };
-export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string };
+export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string };
 
 // 能投稿的身分；只有這些人會出現在攝影師頁
 const POSTING_ROLES = ["photographer", "reviewer", "admin"];
@@ -34,6 +34,8 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
     date: d.date ?? "",
     location: d.location ?? "",
     description: d.description ?? "",
+    status: d.status ?? "pending",
+    rejectReason: d.rejectReason || undefined,
   }));
 }
 
@@ -87,4 +89,19 @@ export async function getStats() {
     listPhotographers().then((l) => l.length),
   ]);
   return { works, photographers };
+}
+
+// 後台用：不限審核狀態。呼叫前一定要先用 requireRole 檢查權限
+export async function listWorksForBackend(opts: { status?: string; photographerId?: string }) {
+  const filter: Document = {};
+  if (opts.status) filter.status = opts.status;
+  if (opts.photographerId) filter.photographerId = opts.photographerId;
+  const docs = await (await getDb()).collection("works").find(filter).sort({ createdAt: -1 }).toArray();
+  return toWorks(docs);
+}
+
+export async function getProfile(userId: string) {
+  const _id = toId(userId);
+  const doc = _id && (await (await getDb()).collection("users").findOne({ _id }));
+  return doc ? toPhotographer(doc) : null;
 }
