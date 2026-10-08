@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { getDb } from "@/lib/mongodb";
 import { isRole, type Role } from "@/lib/roles";
@@ -9,8 +10,17 @@ const adminEmails = (process.env.ADMIN_EMAILS ?? "")
   .map((s) => s.trim().toLowerCase())
   .filter(Boolean);
 
+// 本機開發專用：免 Google 直接以管理員登入。
+// 只有「npm run dev」且 .env.local 設了 DEV_LOGIN=1 才會開；正式環境（NODE_ENV=production）永遠是關的。
+export const devLoginEnabled = process.env.NODE_ENV === "development" && process.env.DEV_LOGIN === "1" && adminEmails.length > 0;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Google],
+  providers: [
+    Google,
+    ...(devLoginEnabled
+      ? [Credentials({ id: "dev", name: "開發模式", credentials: {}, authorize: async () => ({ email: adminEmails[0], name: "開發模式管理員" }) })]
+      : []),
+  ],
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
   pages: { signIn: "/login" },
   callbacks: {
