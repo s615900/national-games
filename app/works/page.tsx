@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { WorkCard } from "@/components/WorkCard";
-import { sports, works } from "@/lib/mock-data";
+import { listWorks } from "@/lib/data";
+import { sports } from "@/lib/sports";
 
 export const metadata = { title: "作品瀏覽｜National Games" };
 
@@ -9,7 +10,7 @@ async function WorksPageContent({ searchParams }: PageProps<"/works">) {
   const sp = await searchParams;
   const sport = typeof sp.sport === "string" ? sp.sport : "";
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const list = works.filter((w) => (!sport || w.sport === sport) && (!q || `${w.title}${w.event}${w.location}`.includes(q)));
+  const list = await listWorks({ sport, q });
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">

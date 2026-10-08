@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getPhotographer, getSport, type Work } from "@/lib/mock-data";
+import type { Work } from "@/lib/data";
+import { getSport } from "@/lib/sports";
 
 // 暫時用漸層色塊代替照片；有真實照片後換成圖片
 export function WorkThumb({ work, tall = false }: { work: Work; tall?: boolean }) {
@@ -12,14 +13,13 @@ export function WorkThumb({ work, tall = false }: { work: Work; tall?: boolean }
 }
 
 export function WorkCard({ work }: { work: Work }) {
-  const p = getPhotographer(work.photographerId);
   return (
     <Link href={`/works/${work.id}`} className="group block">
       <div className="overflow-hidden rounded-xl transition group-hover:scale-[1.02] group-hover:shadow-lg">
         <WorkThumb work={work} />
       </div>
       <h3 className="mt-2 font-semibold">{work.title}</h3>
-      <p className="text-sm text-gray-500">{p?.name}・{work.event}</p>
+      <p className="text-sm text-gray-500">{work.photographerName}・{work.event}</p>
     </Link>
   );
 }

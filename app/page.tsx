@@ -1,6 +1,23 @@
 import Link from "next/link";
 import { WorkCard } from "@/components/WorkCard";
-import { photographers, sports, works } from "@/lib/mock-data";
+import { Suspense } from "react";
+import { getStats, listWorks } from "@/lib/data";
+import { sports } from "@/lib/sports";
+
+async function Stats() {
+  const { works, photographers } = await getStats();
+  return <p className="mt-8 text-sm text-gray-400">{works} 件作品・{photographers} 位攝影師・{sports.length} 種運動</p>;
+}
+
+async function FeaturedWorks() {
+  const works = await listWorks({ limit: 8 });
+  if (works.length === 0) return <p className="mt-6 text-gray-500">還沒有作品，敬請期待。</p>;
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      {works.map((w) => <WorkCard key={w.id} work={w} />)}
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -12,7 +29,7 @@ export default function Home() {
           <Link href="/works" className="rounded-lg bg-white px-6 py-3 font-semibold text-black">瀏覽作品</Link>
           <Link href="/login" className="rounded-lg border border-white px-6 py-3">我是攝影師，我要投稿</Link>
         </div>
-        <p className="mt-8 text-sm text-gray-400">{works.length} 件作品・{photographers.length} 位攝影師・{sports.length} 種運動</p>
+        <Suspense><Stats /></Suspense>
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pt-12">
@@ -32,9 +49,7 @@ export default function Home() {
           <h2 className="text-xl font-bold">精選作品</h2>
           <Link href="/works" className="text-sm underline">看全部</Link>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {works.slice(0, 8).map((w) => <WorkCard key={w.id} work={w} />)}
-        </div>
+        <Suspense><FeaturedWorks /></Suspense>
       </section>
     </main>
   );

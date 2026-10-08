@@ -2,13 +2,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WorkCard } from "@/components/WorkCard";
-import { getPhotographer, getSport, works } from "@/lib/mock-data";
+import { getPhotographer, listWorks } from "@/lib/data";
+import { getSport } from "@/lib/sports";
 
 async function PhotographerPageContent({ params }: PageProps<"/photographers/[id]">) {
   const { id } = await params;
-  const p = getPhotographer(id);
+  const p = await getPhotographer(id);
   if (!p) notFound();
-  const list = works.filter((w) => w.photographerId === p.id);
+  const list = await listWorks({ photographerId: p.id });
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
