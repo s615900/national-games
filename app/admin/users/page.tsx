@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { requireRole } from "@/lib/guard";
 import { getDb } from "@/lib/mongodb";
 import { ROLES } from "@/lib/roles";
+import { getSport } from "@/lib/sports";
 import { setRole, setSuspended } from "./actions";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -21,7 +22,7 @@ async function AdminUsersPageContent() {
       <table className="mt-6 w-full text-left text-sm">
         <thead>
           <tr className="border-b">
-            <th className="p-2">姓名</th><th className="p-2">信箱</th><th className="p-2">身分</th><th className="p-2">狀態</th>
+            <th className="p-2">姓名</th><th className="p-2">信箱</th><th className="p-2">申請資料</th><th className="p-2">身分</th><th className="p-2">狀態</th>
           </tr>
         </thead>
         <tbody>
@@ -32,6 +33,15 @@ async function AdminUsersPageContent() {
               <tr key={id} className="border-b">
                 <td className="p-2">{u.name}</td>
                 <td className="p-2">{u.email}</td>
+                <td className="p-2 text-xs text-gray-600">
+                  {u.region || u.bio || u.instagram || u.sports?.length ? (
+                    <>
+                      <p>{[u.region, (u.sports ?? []).map((x: string) => getSport(x)?.name).join("、")].filter(Boolean).join("・")}</p>
+                      {u.instagram && <p>IG：@{u.instagram}</p>}
+                      {u.bio && <p className="mt-1 max-w-xs">{u.bio}</p>}
+                    </>
+                  ) : "（未填）"}
+                </td>
                 <td className="p-2">
                   {isMe ? ROLE_LABEL[u.role] : (
                     <form action={setRole} className="flex gap-2">

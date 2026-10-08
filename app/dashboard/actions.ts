@@ -9,7 +9,7 @@ const text = (fd: FormData, key: string, max: number) => String(fd.get(key) ?? "
 
 // 攝影師改自己的資料：身分一律取自登入狀態，不信任表單
 export async function saveProfile(formData: FormData) {
-  const session = await requireRole("photographer");
+  const session = await requireRole("photographer_pending"); // 申請時就要能填
   const slugs = new Set(sports.map((s) => s.slug));
   const picked = formData.getAll("sports").map(String).filter((s) => slugs.has(s));
   await (await getDb()).collection("users").updateOne(
@@ -22,6 +22,8 @@ export async function saveProfile(formData: FormData) {
     } }
   );
   revalidatePath("/dashboard");
+  revalidatePath("/pending");
+  revalidatePath("/admin/users");
 }
 
 // 新增的作品一律是「待審核」，通過審核才會公開
