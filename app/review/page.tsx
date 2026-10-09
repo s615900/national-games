@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { requireRole } from "@/lib/guard";
+import { getDb } from "@/lib/mongodb";
 import { listWorksForBackend } from "@/lib/data";
 import { photoUrl } from "@/lib/photos";
 import { getSport } from "@/lib/sports";
@@ -11,7 +12,10 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
   const session = await requireRole("reviewer");
   const sp = await searchParams;
   const tab = typeof sp.status === "string" && sp.status in WORK_STATUS ? sp.status : "pending";
-  const all = await listWorksForBackend({});
+  const [all, openReports] = await Promise.all([
+    listWorksForBackend({}),
+    (await getDb()).collection("reports").countDocuments({ status: "open" }),
+  ]);
   const count = (s: string) => all.filter((w) => w.status === s).length;
   const shown = all.filter((w) => w.status === tab);
   const tabs = [["pending", "待審核"], ["approved", "已通過"], ["rejected", "已退回"]] as const;
@@ -24,7 +28,10 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
           <h1 className="mt-1 text-2xl font-bold">審核作品</h1>
           <p className="mt-1 text-sm text-gray-500">{count("pending") > 0 ? `有 ${count("pending")} 件作品等待審核` : "目前沒有待審核的作品"}</p>
         </div>
-        {session.user.role === "admin" && <Link href="/admin/users" className={btnOutline}>帳號管理</Link>}
+        <div className="flex gap-2">
+          <Link href="/review/reports" className={btnOutline}>檢舉處理{openReports > 0 && <span className="rounded-full bg-red-600 px-1.5 text-xs text-white">{openReports}</span>}</Link>
+          {session.user.role === "admin" && <Link href="/admin/users" className={btnOutline}>帳號管理</Link>}
+        </div>
       </header>
 
       <section className="grid grid-cols-3 gap-3">

@@ -109,7 +109,10 @@ export async function deleteWork(formData: FormData) {
   const db = await getDb();
   const { deletedCount } = await db.collection("works").deleteOne({ _id: new ObjectId(id), photographerId: session.user.id });
   // 作品刪掉，照片一定要一起刪，不然會變成永遠沒人管的「孤兒照片」佔空間
-  if (deletedCount) await db.collection("photos").deleteMany({ workId: id });
+  if (deletedCount) {
+    await db.collection("photos").deleteMany({ workId: id });
+    await db.collection("reports").deleteMany({ workId: id });
+  }
   revalidatePath("/dashboard");
   revalidatePath("/works");
   revalidatePath("/");

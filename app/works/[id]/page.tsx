@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ReportButton } from "@/components/ReportButton";
 import { WorkCard, WorkThumb } from "@/components/WorkCard";
 import { getWork, listWorks } from "@/lib/data";
 import { photoUrl } from "@/lib/photos";
@@ -37,7 +38,7 @@ async function WorkPageContent({ params }: PageProps<"/works/[id]">) {
         <div><dt className="text-gray-500">攝影師</dt><dd><Link className="underline" href={`/photographers/${work.photographerId}`}>{work.photographerName}</Link></dd></div>
       </dl>
       <p className="mt-6 leading-relaxed">{work.description}</p>
-      <button disabled className="mt-6 rounded-lg border px-4 py-2 text-sm text-gray-400" title="之後開放">檢舉此作品（尚未開放）</button>
+      <ReportButton workId={work.id} />
       {more.length > 0 && (
         <section className="mt-12">
           <h2 className="font-bold">{work.photographerName} 的其他作品</h2>
