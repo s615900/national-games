@@ -34,7 +34,7 @@ async function AdminUsersPageContent({ searchParams }: PageProps<"/admin/users">
           <h1 className="mt-1 text-2xl font-bold">帳號管理</h1>
           <p className="mt-1 text-sm text-gray-500">{pending > 0 ? `有 ${pending} 位攝影師等待核准` : "目前沒有待核准的帳號"}</p>
         </div>
-        <Link href="/review" className={btnOutline}>審核作品</Link>
+        <div className="flex gap-2"><Link href="/review" className={btnOutline}>審核作品</Link><Link href="/admin/storage" className={btnOutline}>照片空間</Link></div>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-5">

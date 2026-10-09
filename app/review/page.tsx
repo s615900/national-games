@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { requireRole } from "@/lib/guard";
 import { listWorksForBackend } from "@/lib/data";
+import { photoUrl } from "@/lib/photos";
 import { getSport } from "@/lib/sports";
 import { WORK_STATUS, btnDanger, btnGhost, btnOutline, card } from "@/lib/ui";
 import { approveWork, rejectWork } from "./actions";
@@ -67,6 +68,20 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
                       攝影師：<Link href={`/photographers/${w.photographerId}`} className="text-gray-800 underline">{w.photographerName || "（未命名）"}</Link>
                     </p>
                     {w.description && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-gray-50 p-3 text-sm">{w.description}</p>}
+                    {w.photos.length > 0 ? (
+                      <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {w.photos.map((p, i) => (
+                          <li key={p.id}>
+                            <a href={photoUrl(p.id, "full")} target="_blank" rel="noopener noreferrer" title="點擊看大圖">
+                              {/* eslint-disable-next-line @next/next/no-img-element -- 已經是縮圖 */}
+                              <img src={photoUrl(p.id)} alt={`${w.title} 第 ${i + 1} 張`} loading="lazy" className="aspect-[4/3] w-full rounded-lg bg-gray-100 object-cover transition hover:opacity-90" />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-amber-700">⚠ 這件作品沒有附照片</p>
+                    )}
                     {w.status === "rejected" && w.rejectReason && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"><span className="font-medium">退回原因：</span>{w.rejectReason}</p>}
 
                     {w.status === "pending" && (

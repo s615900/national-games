@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { PhotoPicker } from "@/components/PhotoPicker";
 import type { Work } from "@/lib/data";
+import { PHOTO_LIMITS, photoUrl } from "@/lib/photos";
 import { sports } from "@/lib/sports";
 
 const field = "mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-black focus:ring-2 focus:ring-black/10";
@@ -16,6 +18,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 
 // 新增與修改作品共用的表單；有帶 work 就是修改
 export function WorkForm({ action, work, submitLabel }: { action: (fd: FormData) => Promise<void>; work?: Work; submitLabel: string }) {
+  const existing = work?.photos ?? [];
   return (
     <form action={action} className="space-y-8 rounded-2xl border bg-white p-6 shadow-sm">
       {work && <input type="hidden" name="id" value={work.id} />}
@@ -47,12 +50,25 @@ export function WorkForm({ action, work, submitLabel }: { action: (fd: FormData)
       </section>
 
       <section className="space-y-3">
-        <h2 className="font-bold">作品照片</h2>
-        <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
-          <span className="text-3xl">🖼️</span>
-          <p className="mt-2 font-medium text-gray-700">照片上傳即將開放</p>
-          <p className="mt-1">現在可以先送出作品資訊，之後再補照片。</p>
-        </div>
+        <h2 className="font-bold">作品照片 <span className="text-xs font-normal text-gray-500">最多 {PHOTO_LIMITS.perWork} 張，第一張會當封面</span></h2>
+        {existing.length > 0 && (
+          <div>
+            <p className="mb-2 text-sm text-gray-600">目前的照片：選「封面」可更換封面，勾「刪除」會在儲存時移除。</p>
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {existing.map((p, i) => (
+                <li key={p.id} className="overflow-hidden rounded-lg border">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- 已經是縮圖 */}
+                  <img src={photoUrl(p.id)} alt={`照片 ${i + 1}`} className="aspect-[4/3] w-full object-cover" />
+                  <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-xs">
+                    <label className="flex items-center gap-1"><input type="radio" name="cover" value={p.id} defaultChecked={i === 0} />封面</label>
+                    <label className="flex items-center gap-1 text-red-600"><input type="checkbox" name="removePhoto" value={p.id} />刪除</label>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <PhotoPicker max={Math.max(0, PHOTO_LIMITS.perWork - existing.length)} />
       </section>
 
       <div className="flex items-center gap-3 border-t pt-6">

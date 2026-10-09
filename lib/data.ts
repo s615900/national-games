@@ -11,7 +11,7 @@ async function getDb() {
 export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string; avatarUrl?: string };
 // 完整資料（含不公開欄位）：只能給本人和管理員看
 export type FullProfile = Photographer & { realName: string; phone: string; email: string; agreedAt?: Date };
-export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean };
+export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean; photos: { id: string; width: number; height: number }[] };
 
 // 能投稿的身分；只有這些人會出現在攝影師頁
 const POSTING_ROLES = ["photographer", "reviewer", "admin"];
@@ -37,9 +37,17 @@ function toPhotographer(u: Document): Photographer {
 }
 
 async function toWorks(docs: Document[]): Promise<Work[]> {
+  const db = await getDb();
   const ids = [...new Set(docs.map((d) => String(d.photographerId)))].map(toId).filter((x) => x !== null);
-  const users = await (await getDb()).collection("users").find({ _id: { $in: ids } }, { projection: { avatar: 0 } }).toArray();
+  const users = await db.collection("users").find({ _id: { $in: ids } }, { projection: { avatar: 0 } }).toArray();
   const names = new Map(users.map((u) => [u._id.toString(), u.displayName || u.name || ""]));
+  // 照片只拿「id 和尺寸」，大圖、縮圖的二進位資料不能帶出來
+  const workIds = docs.map((d) => d._id.toString());
+  const photoDocs = workIds.length
+    ? await db.collection("photos").find({ workId: { $in: workIds } }, { projection: { full: 0, thumb: 0 } }).sort({ order: 1, createdAt: 1 }).toArray()
+    : [];
+  const byWork = new Map<string, Work["photos"]>();
+  for (const p of photoDocs) byWork.set(p.workId, [...(byWork.get(p.workId) ?? []), { id: p._id.toString(), width: p.width ?? 0, height: p.height ?? 0 }]);
   return docs.map((d) => ({
     id: d._id.toString(),
     title: d.title ?? "",
@@ -53,6 +61,7 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
     status: d.status ?? "pending",
     rejectReason: d.rejectReason || undefined,
     resubmitted: !!d.resubmitted,
+    photos: byWork.get(d._id.toString()) ?? [],
   }));
 }
 

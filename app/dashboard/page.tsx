@@ -8,6 +8,7 @@ import { getProfile, listWorksForBackend } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
 import { hasRole } from "@/lib/roles";
 import { getSport } from "@/lib/sports";
+import { photoUrl } from "@/lib/photos";
 import { ROLE_LABEL, WORK_STATUS, btnGhost, btnOutline, btnPrimary } from "@/lib/ui";
 import { deleteWork } from "./actions";
 
@@ -55,6 +56,7 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
           <span className="font-medium text-gray-500">管理工具</span>
           <Link href="/review" className={btnOutline}>審核作品</Link>
           {hasRole(role, "admin") && <Link href="/admin/users" className={btnOutline}>帳號管理</Link>}
+          {hasRole(role, "admin") && <Link href="/admin/storage" className={btnOutline}>照片空間</Link>}
         </nav>
       )}
 
@@ -105,13 +107,18 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
               const st = STATUS[w.status] ?? STATUS.pending;
               return (
                 <li key={w.id} className="flex items-start gap-4 px-6 py-4">
-                  <div className={`flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${sport?.color ?? "from-gray-300 to-gray-500"} text-2xl`}>{sport?.emoji}</div>
+                  {w.photos[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- 已經是縮圖
+                    <img src={photoUrl(w.photos[0].id)} alt={w.title} className="h-16 w-20 shrink-0 rounded-lg bg-gray-100 object-cover" />
+                  ) : (
+                    <div className={`flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${sport?.color ?? "from-gray-300 to-gray-500"} text-2xl`}>{sport?.emoji}</div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="truncate font-semibold">{w.title}</h3>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${st.badge}`}>{st.label}</span>
                     </div>
-                    <p className="mt-1 text-sm text-gray-500">{[sport?.name, w.event, w.location, w.date].filter(Boolean).join("・")}</p>
+                    <p className="mt-1 text-sm text-gray-500">{[sport?.name, w.event, w.location, w.date, w.photos.length ? `${w.photos.length} 張照片` : "尚無照片"].filter(Boolean).join("・")}</p>
                     {w.status === "rejected" && w.rejectReason && (
                       <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"><span className="font-medium">退回原因：</span>{w.rejectReason}</p>
                     )}
