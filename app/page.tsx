@@ -27,7 +27,7 @@ export default function Home() {
         <p className="mx-auto mt-4 max-w-xl text-gray-300">集結全台灣運動攝影師的作品，從田徑到棒球，從校園到全國賽事。</p>
         <div className="mt-8 flex justify-center gap-3">
           <Link href="/works" className="rounded-lg bg-white px-6 py-3 font-semibold text-black">瀏覽作品</Link>
-          <Link href="/login" className="rounded-lg border border-white px-6 py-3">我是攝影師，我要投稿</Link>
+          <Link href="/register" className="rounded-lg border border-white px-6 py-3">我是攝影師，我要註冊投稿</Link>
         </div>
         <Suspense><Stats /></Suspense>
       </section>

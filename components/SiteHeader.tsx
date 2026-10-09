@@ -10,7 +10,10 @@ async function AuthLink() {
   return session?.user ? (
     <Link href="/dashboard" className="rounded-lg bg-black px-3 py-1.5 text-white">我的後台</Link>
   ) : (
-    <Link href="/login" className="rounded-lg bg-black px-3 py-1.5 text-white">登入／註冊</Link>
+    <>
+      <Link href="/login" className="rounded-lg px-2 py-1.5 hover:bg-gray-100">登入</Link>
+      <Link href="/register" className="rounded-lg bg-black px-3 py-1.5 text-white hover:bg-gray-800">註冊</Link>
+    </>
   );
 }
 
@@ -22,7 +25,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-4 text-sm sm:gap-6">
           <Link href="/works" className="hover:underline">作品</Link>
           <Link href="/photographers" className="hover:underline">攝影師</Link>
-          <Suspense fallback={<span className="rounded-lg bg-gray-200 px-3 py-1.5 text-transparent">登入／註冊</span>}><AuthLink /></Suspense>
+          <Suspense fallback={<span className="rounded-lg bg-gray-200 px-3 py-1.5 text-transparent">登入　註冊</span>}><AuthLink /></Suspense>
         </nav>
       </div>
     </header>
@@ -36,6 +39,7 @@ export function SiteFooter() {
       <p className="mt-2 flex justify-center gap-4">
         <Link href="/terms" className="underline">服務條款</Link>
         <Link href="/privacy" className="underline">隱私權政策</Link>
+        <Link href="/register" className="underline">攝影師註冊</Link>
       </p>
     </footer>
   );
