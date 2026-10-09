@@ -8,19 +8,11 @@ import { getProfile, listWorksForBackend } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
 import { hasRole } from "@/lib/roles";
 import { getSport } from "@/lib/sports";
+import { ROLE_LABEL, WORK_STATUS, btnGhost, btnOutline, btnPrimary } from "@/lib/ui";
 import { deleteWork } from "./actions";
 
-const STATUS: Record<string, { label: string; badge: string; num: string }> = {
-  pending: { label: "審核中", badge: "bg-amber-50 text-amber-700 ring-amber-600/20", num: "text-amber-600" },
-  approved: { label: "已公開", badge: "bg-green-50 text-green-700 ring-green-600/20", num: "text-green-600" },
-  rejected: { label: "已退回", badge: "bg-red-50 text-red-700 ring-red-600/20", num: "text-red-600" },
-};
-const ROLE_LABEL: Record<string, string> = { photographer: "攝影師", reviewer: "審核員", admin: "管理員" };
-
-const btn = "inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition";
-const btnPrimary = `${btn} bg-black text-white hover:bg-gray-800`;
-const btnOutline = `${btn} border border-gray-300 bg-white text-gray-800 hover:bg-gray-50`;
-const btnGhost = `${btn} text-gray-600 hover:bg-gray-100`;
+const STATUS = WORK_STATUS;
+const ROLE_NAME = ROLE_LABEL;
 
 async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
   const session = await requireRole("photographer_pending");
@@ -43,7 +35,7 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
           <div>
             <h1 className="text-xl font-bold">{displayName}</h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{ROLE_LABEL[role]}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{ROLE_NAME[role]}</span>
               {[profile?.organization, profile?.region].filter(Boolean).join("・")}
             </p>
           </div>
