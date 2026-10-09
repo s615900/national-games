@@ -12,7 +12,8 @@ const text = (fd: FormData, key: string, max: number) => String(fd.get(key) ?? "
 // 改自己的資料：身分一律取自登入狀態，不信任表單。填不完整就退回並說明原因
 export async function saveProfile(formData: FormData) {
   const session = await requireRole("photographer_pending"); // 申請時就要能填
-  const from = formData.get("from") === "/pending" ? "/pending" : "/dashboard";
+  const f = formData.get("from");
+  const from = f === "/pending" || f === "/dashboard/profile" ? f : "/dashboard"; // 只允許回到這幾頁
   const result = parseProfile(formData);
   if ("error" in result) redirect(`${from}?error=${encodeURIComponent(result.error)}`);
   const users = (await getDb()).collection("users");
@@ -20,6 +21,7 @@ export async function saveProfile(formData: FormData) {
   const me = await users.findOne({ _id }, { projection: { agreedAt: 1 } });
   await users.updateOne({ _id }, { $set: { ...result.data, agreedAt: me?.agreedAt ?? new Date(), profileUpdatedAt: new Date() } });
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/profile");
   revalidatePath("/pending");
   revalidatePath("/admin/users");
   redirect(`${from}?saved=1`);

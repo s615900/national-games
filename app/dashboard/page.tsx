@@ -6,7 +6,7 @@ import { getProfile, listWorksForBackend } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
 import { hasRole } from "@/lib/roles";
 import { getSport, sports } from "@/lib/sports";
-import { ProfileForm, ProfileNotice, isProfileComplete } from "@/components/ProfileForm";
+import { isProfileComplete } from "@/components/ProfileForm";
 import { createWork, deleteWork } from "./actions";
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -17,9 +17,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 
 const input = "w-full rounded-lg border px-3 py-2";
 
-async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
-  const sp = await searchParams;
-  const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+async function DashboardPageContent() {
   const session = await requireRole("photographer_pending");
   const role = session.user.role!;
   if (role === "photographer_pending") redirect("/pending");
@@ -34,11 +32,18 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
           {hasRole(role, "reviewer") && <Link className="underline" href="/review">審核後台</Link>}
           {hasRole(role, "admin") && <Link className="underline" href="/admin/users">帳號管理</Link>}
           {profile && <Link className="underline" href={`/photographers/${profile.id}`}>我的公開頁面</Link>}
+          <Link className="rounded-full border px-3 py-0.5 text-gray-700 hover:bg-gray-100" href="/dashboard/profile">✏️ 編輯個人資料</Link>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
             <button className="underline">登出</button>
           </form>
         </div>
       </header>
+
+      {!isProfileComplete(profile) && (
+        <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+          個人資料還沒填完整，<Link href="/dashboard/profile" className="underline">點這裡補齊必填欄位</Link>。
+        </p>
+      )}
 
       <section>
         <h2 className="text-xl font-bold">我的作品（{works.length}）</h2>
@@ -82,29 +87,14 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
         </form>
       </section>
 
-      <section>
-        <h2 className="text-xl font-bold">個人資料</h2>
-        <details className="mt-3 rounded-xl border p-4" open={!isProfileComplete(profile) || !!sp.saved || !!sp.error}>
-          <summary className="cursor-pointer text-sm">
-            {isProfileComplete(profile)
-              ? `已填寫：${profile?.name}・${[profile?.region, profile?.sports.map((x) => getSport(x)?.name).join("、")].filter(Boolean).join("・")}（點此修改）`
-              : "資料還沒填完整，請補齊必填欄位"}
-          </summary>
-          <div className="mb-4 mt-3 space-y-3">
-            <p className="text-sm text-gray-500">公開資料會顯示在你的攝影師頁面（有作品通過審核後才會出現在攝影師列表）。</p>
-            <ProfileNotice saved={str(sp.saved)} error={str(sp.error)} />
-          </div>
-          <ProfileForm profile={profile} from="/dashboard" email={session.user.email} />
-        </details>
-      </section>
     </main>
   );
 }
 
-export default function DashboardPage(props: PageProps<"/dashboard">) {
+export default function DashboardPage() {
   return (
     <Suspense>
-      <DashboardPageContent {...props} />
+      <DashboardPageContent />
     </Suspense>
   );
 }

@@ -16,7 +16,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 }
 
 // 申請時（等待核准）和核准後的後台共用同一份表單；from 決定儲存後回到哪一頁
-export function ProfileForm({ profile, from, email }: { profile: FullProfile | null; from: "/pending" | "/dashboard"; email?: string | null }) {
+export function ProfileForm({ profile, from, email }: { profile: FullProfile | null; from: "/pending" | "/dashboard/profile"; email?: string | null }) {
   return (
     <form action={saveProfile} className="space-y-8">
       <input type="hidden" name="from" value={from} />
