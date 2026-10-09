@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AvatarEditor } from "@/components/Avatar";
 import { ProfileForm, ProfileNotice } from "@/components/ProfileForm";
 import { getProfile } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
@@ -19,6 +20,7 @@ async function ProfilePageContent({ searchParams }: PageProps<"/dashboard/profil
         <h1 className="mt-2 text-2xl font-bold">編輯個人資料</h1>
       </div>
       <ProfileNotice saved={str(sp.saved)} error={str(sp.error)} />
+      <AvatarEditor name={profile?.name || session.user.name || ""} src={profile?.avatarUrl} from="/dashboard/profile" />
       <ProfileForm profile={profile} from="/dashboard/profile" email={session.user.email} />
     </main>
   );

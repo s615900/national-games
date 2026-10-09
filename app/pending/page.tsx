@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { AvatarEditor } from "@/components/Avatar";
 import { ProfileForm, ProfileNotice } from "@/components/ProfileForm";
 import { getProfile } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
@@ -21,6 +22,7 @@ async function PendingPageContent({ searchParams }: PageProps<"/pending">) {
         </p>
       </div>
       <ProfileNotice saved={str(sp.saved)} error={str(sp.error)} />
+      <AvatarEditor name={profile?.name || session.user.name || ""} src={profile?.avatarUrl} from="/pending" />
       <ProfileForm profile={profile} from="/pending" email={session.user.email} />
     </main>
   );

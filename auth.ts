@@ -43,13 +43,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         { upsert: true }
       );
-      const doc = await users.findOne({ email });
+      const doc = await users.findOne({ email }, { projection: { avatar: 0 } });
       return !doc?.suspended; // 被停權的人不能登入
     },
     // 每次都從資料庫讀最新身分，改權限後不用等對方重新登入
     async jwt({ token }) {
       if (token.email) {
-        const doc = await (await getDb()).collection("users").findOne({ email: token.email.toLowerCase() });
+        const doc = await (await getDb()).collection("users").findOne({ email: token.email.toLowerCase() }, { projection: { avatar: 0 } });
         token.role = doc && !doc.suspended && isRole(doc.role) ? doc.role : undefined;
         token.uid = doc?._id.toString();
       }

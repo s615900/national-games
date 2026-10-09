@@ -1,5 +1,6 @@
 "use server";
-import { ObjectId } from "mongodb";
+import { Binary, ObjectId } from "mongodb";
+import sharp from "sharp";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guard";
@@ -62,4 +63,43 @@ export async function deleteWork(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/works");
   revalidatePath("/");
+}
+
+const AVATAR_MAX = 5 * 1024 * 1024;
+
+// 上傳大頭貼：伺服器自己重新處理圖片（裁成 256×256 正方形、轉 webp），不直接存使用者給的檔案
+export async function saveAvatar(formData: FormData) {
+  const session = await requireRole("photographer_pending");
+  const f = formData.get("from");
+  const from = f === "/pending" ? "/pending" : "/dashboard/profile";
+  const back = (q: string) => redirect(`${from}?${q}`);
+  const file = formData.get("avatar");
+  if (!(file instanceof File) || file.size === 0) back(`error=${encodeURIComponent("請先選擇一張圖片")}`);
+  const upload = file as File;
+  if (upload.size > AVATAR_MAX) back(`error=${encodeURIComponent("圖片太大，請選 5MB 以下的檔案")}`);
+
+  let out: Buffer;
+  try {
+    out = await sharp(Buffer.from(await upload.arrayBuffer()), { limitInputPixels: 50_000_000 })
+      .rotate() // 依照片方向自動轉正
+      .resize(256, 256, { fit: "cover", position: "attention" })
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch {
+    return back(`error=${encodeURIComponent("無法讀取這個檔案，請選 JPG、PNG 或 WebP 圖片")}`);
+  }
+  await (await getDb()).collection("users").updateOne(
+    { _id: new ObjectId(session.user.id) },
+    { $set: { avatar: new Binary(out), avatarUpdatedAt: new Date() } }
+  );
+  for (const p of ["/dashboard", "/dashboard/profile", "/pending", "/admin/users", "/photographers"]) revalidatePath(p);
+  back("saved=avatar");
+}
+
+export async function removeAvatar(formData: FormData) {
+  const session = await requireRole("photographer_pending");
+  const from = formData.get("from") === "/pending" ? "/pending" : "/dashboard/profile";
+  await (await getDb()).collection("users").updateOne({ _id: new ObjectId(session.user.id) }, { $unset: { avatar: "", avatarUpdatedAt: "" } });
+  for (const p of ["/dashboard", "/dashboard/profile", "/pending", "/admin/users", "/photographers"]) revalidatePath(p);
+  redirect(`${from}?saved=avatar`);
 }

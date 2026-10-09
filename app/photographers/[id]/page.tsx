@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 import { WorkCard } from "@/components/WorkCard";
 import { getPhotographer, listWorks } from "@/lib/data";
 import { getSport } from "@/lib/sports";
@@ -15,7 +16,7 @@ async function PhotographerPageContent({ params }: PageProps<"/photographers/[id
     <main className="mx-auto max-w-6xl px-4 py-8">
       <Link href="/photographers" className="text-sm text-gray-500 hover:underline">← 回攝影師列表</Link>
       <div className="mt-4 flex items-center gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 text-3xl font-bold">{p.name[0]}</div>
+        <Avatar name={p.name} src={p.avatarUrl} className="h-20 w-20 text-3xl" />
         <div>
           <h1 className="text-2xl font-bold">{p.name}</h1>
           <p className="text-gray-500">{p.region}・{p.sports.map((s) => getSport(s)?.name).join("、")}</p>

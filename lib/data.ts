@@ -8,7 +8,7 @@ async function getDb() {
   return getMongoDb();
 }
 
-export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string };
+export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string; avatarUrl?: string };
 // 完整資料（含不公開欄位）：只能給本人和管理員看
 export type FullProfile = Photographer & { realName: string; phone: string; email: string; agreedAt?: Date };
 export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string };
@@ -31,12 +31,14 @@ function toPhotographer(u: Document): Photographer {
     organization: u.organization || undefined,
     experience: u.experience || undefined,
     gear: u.gear || undefined,
+    // 網址帶更新時間：換照片後瀏覽器才會抓新的，沒換就永久快取
+    avatarUrl: u.avatarUpdatedAt ? `/api/avatar/${u._id}?v=${new Date(u.avatarUpdatedAt).getTime()}` : undefined,
   };
 }
 
 async function toWorks(docs: Document[]): Promise<Work[]> {
   const ids = [...new Set(docs.map((d) => String(d.photographerId)))].map(toId).filter((x) => x !== null);
-  const users = await (await getDb()).collection("users").find({ _id: { $in: ids } }).toArray();
+  const users = await (await getDb()).collection("users").find({ _id: { $in: ids } }, { projection: { avatar: 0 } }).toArray();
   const names = new Map(users.map((u) => [u._id.toString(), u.displayName || u.name || ""]));
   return docs.map((d) => ({
     id: d._id.toString(),
@@ -79,7 +81,7 @@ export async function getWork(id: string) {
 export async function getPhotographer(id: string) {
   const _id = toId(id);
   if (!_id) return null;
-  const doc = await (await getDb()).collection("users").findOne({ _id, role: { $in: POSTING_ROLES }, suspended: { $ne: true } });
+  const doc = await (await getDb()).collection("users").findOne({ _id, role: { $in: POSTING_ROLES }, suspended: { $ne: true } }, { projection: { avatar: 0 } });
   return doc ? toPhotographer(doc) : null;
 }
 
@@ -91,7 +93,7 @@ export async function listPhotographers() {
     { $group: { _id: "$photographerId", count: { $sum: 1 } } },
   ]).toArray();
   const ids = counts.map((c) => toId(c._id)).filter((x) => x !== null);
-  const users = await db.collection("users").find({ _id: { $in: ids }, role: { $in: POSTING_ROLES }, suspended: { $ne: true } }).toArray();
+  const users = await db.collection("users").find({ _id: { $in: ids }, role: { $in: POSTING_ROLES }, suspended: { $ne: true } }, { projection: { avatar: 0 } }).toArray();
   const countOf = new Map(counts.map((c) => [c._id, c.count]));
   return users.map((u) => ({ ...toPhotographer(u), workCount: countOf.get(u._id.toString()) ?? 0 }));
 }
@@ -121,6 +123,6 @@ export function toFullProfile(u: Document): FullProfile {
 // 填寫表單用：只給登入者本人看自己的完整資料
 export async function getProfile(userId: string) {
   const _id = toId(userId);
-  const doc = _id && (await (await getDb()).collection("users").findOne({ _id }));
+  const doc = _id && (await (await getDb()).collection("users").findOne({ _id }, { projection: { avatar: 0 } }));
   return doc ? toFullProfile(doc) : null;
 }

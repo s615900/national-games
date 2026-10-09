@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/auth";
+import { Avatar } from "@/components/Avatar";
 import { isProfileComplete } from "@/components/ProfileForm";
 import { getProfile, listWorksForBackend } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
@@ -38,7 +39,7 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <header className="flex flex-col gap-5 rounded-2xl border bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-black text-xl font-bold text-white">{displayName.slice(0, 1) || "?"}</div>
+          <Avatar name={displayName} src={profile?.avatarUrl} />
           <div>
             <h1 className="text-xl font-bold">{displayName}</h1>
             <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-gray-500">

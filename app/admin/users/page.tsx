@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { requireRole } from "@/lib/guard";
 import { getDb } from "@/lib/mongodb";
 import { ROLES } from "@/lib/roles";
+import { Avatar } from "@/components/Avatar";
 import { toFullProfile } from "@/lib/data";
 import { getSport } from "@/lib/sports";
 import { setRole, setSuspended } from "./actions";
@@ -15,7 +16,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 async function AdminUsersPageContent() {
   const session = await requireRole("admin");
-  const users = await (await getDb()).collection("users").find().sort({ createdAt: -1 }).toArray();
+  const users = await (await getDb()).collection("users").find({}, { projection: { avatar: 0 } }).sort({ createdAt: -1 }).toArray();
 
   return (
     <main className="mx-auto max-w-4xl p-6">
@@ -33,7 +34,7 @@ async function AdminUsersPageContent() {
             const pf = toFullProfile(u);
             return (
               <tr key={id} className="border-b">
-                <td className="p-2">{u.name}</td>
+                <td className="p-2"><div className="flex items-center gap-2"><Avatar name={pf.name} src={pf.avatarUrl} className="h-8 w-8 text-sm" />{u.name}</div></td>
                 <td className="p-2">{u.email}</td>
                 <td className="p-2 text-xs text-gray-600">
                   {pf.realName ? (
