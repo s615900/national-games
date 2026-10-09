@@ -30,3 +30,24 @@ export async function rejectWork(formData: FormData) {
   );
   refresh();
 }
+
+// 審核員直接下架已公開的作品：退回給攝影師（原因必填），該作品待處理的檢舉順便結案
+export async function unpublishWork(formData: FormData) {
+  const session = await requireRole("reviewer");
+  const id = String(formData.get("id"));
+  const reason = String(formData.get("reason") ?? "").trim().slice(0, 200);
+  if (!ObjectId.isValid(id) || !reason) return;
+  const db = await getDb();
+  const now = new Date();
+  const { matchedCount } = await db.collection("works").updateOne(
+    { _id: new ObjectId(id), status: "approved" },
+    { $set: { status: "rejected", rejectReason: `已下架：${reason}`, reviewedBy: session.user.id, reviewedAt: now } }
+  );
+  if (matchedCount) {
+    await db.collection("reports").updateMany(
+      { workId: id, status: "open" },
+      { $set: { status: "resolved", handledBy: session.user.id, handledAt: now, note: `審核員直接下架：${reason}` } }
+    );
+  }
+  refresh();
+}

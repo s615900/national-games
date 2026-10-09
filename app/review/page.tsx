@@ -6,7 +6,7 @@ import { listWorksForBackend } from "@/lib/data";
 import { photoUrl } from "@/lib/photos";
 import { getSport } from "@/lib/sports";
 import { WORK_STATUS, btnDanger, btnGhost, btnOutline, card } from "@/lib/ui";
-import { approveWork, rejectWork } from "./actions";
+import { approveWork, rejectWork, unpublishWork } from "./actions";
 
 async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
   const session = await requireRole("reviewer");
@@ -90,6 +90,19 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
                       <p className="mt-2 text-xs text-amber-700">⚠ 這件作品沒有附照片</p>
                     )}
                     {w.status === "rejected" && w.rejectReason && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"><span className="font-medium">退回原因：</span>{w.rejectReason}</p>}
+
+                    {w.status === "approved" && (
+                      <details className="group mt-3">
+                        <summary className={`${btnOutline} cursor-pointer list-none text-red-600`}>下架…</summary>
+                        <form action={unpublishWork} className="mt-2 w-72 space-y-2 rounded-xl border bg-white p-3 shadow-lg">
+                          <input type="hidden" name="id" value={w.id} />
+                          <label className="block text-sm font-medium">下架原因 <span className="text-red-600">*</span>
+                            <textarea name="reason" required maxLength={200} rows={3} placeholder="作品會退回給攝影師，他會在後台看到這段說明" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-black focus:ring-2 focus:ring-black/10" />
+                          </label>
+                          <button className={`${btnDanger} w-full justify-center`}>確定下架</button>
+                        </form>
+                      </details>
+                    )}
 
                     {w.status === "pending" && (
                       <div className="mt-3 flex flex-wrap items-start gap-2">
