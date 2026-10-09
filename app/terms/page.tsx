@@ -34,7 +34,7 @@ export default function TermsPage() {
       </section>
       <section>
         <h2 className="text-lg font-bold">5. 條款修改與聯絡</h2>
-        <p className="mt-2">本條款修改時會公告於本頁。有任何問題請來信：【待填：聯絡信箱】。</p>
+        <p className="mt-2">本條款修改時會公告於本頁。有任何問題請來信：weite.wu@qsprinttw.com。</p>
       </section>
       <p className="text-sm text-gray-500">個人資料的處理方式請見<a href="/privacy" className="underline">隱私權政策</a>。</p>
     </main>

@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2 className="text-lg font-bold">5. 聯絡我們</h2>
-        <p className="mt-2">有任何隱私問題請來信：【待填：聯絡信箱】。</p>
+        <p className="mt-2">有任何隱私問題請來信：weite.wu@qsprinttw.com。</p>
       </section>
       <p className="text-sm text-gray-500">作品授權方式請見<a href="/terms" className="underline">服務條款</a>。</p>
     </main>

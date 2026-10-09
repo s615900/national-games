@@ -23,7 +23,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link href="/" className="text-lg font-bold">📷 National Games</Link>
         <nav className="flex items-center gap-4 text-sm sm:gap-6">
-          <Link href="/works" className="hover:underline">作品</Link>
+          <Link href="/works" className="hover:underline">作品集</Link>
           <Link href="/photographers" className="hover:underline">攝影師</Link>
           <Suspense fallback={<span className="rounded-lg bg-gray-200 px-3 py-1.5 text-transparent">登入　註冊</span>}><AuthLink /></Suspense>
         </nav>
