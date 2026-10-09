@@ -24,7 +24,7 @@ async function WorkPageContent({ params }: PageProps<"/works/[id]">) {
             <li key={p.id}>
               <a href={photoUrl(p.id, "full")} target="_blank" rel="noopener noreferrer">
                 {/* eslint-disable-next-line @next/next/no-img-element -- 已經處理過的縮圖 */}
-                <img src={photoUrl(p.id)} alt={`${work.title} 第 ${i + 2} 張`} loading="lazy" className="aspect-[4/3] w-full rounded-lg bg-gray-100 object-cover transition hover:opacity-90" />
+                <img src={photoUrl(p.id)} alt={`${work.title} 第 ${i + 2} 張`} loading="lazy" className="aspect-[4/3] w-full rounded-lg bg-gray-100 object-contain transition hover:opacity-90" />
               </a>
             </li>
           ))}

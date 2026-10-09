@@ -19,7 +19,7 @@ export function WorkThumb({ work, tall = false }: { work: Work; tall?: boolean }
       );
     }
     // eslint-disable-next-line @next/next/no-img-element -- 已經處理過的小圖，不需要 Next 再最佳化
-    return <img src={photoUrl(cover.id, "thumb")} alt={work.title} loading="lazy" className="aspect-[4/3] w-full rounded-xl bg-gray-100 object-cover" />;
+    return <img src={photoUrl(cover.id, "thumb")} alt={work.title} loading="lazy" className="aspect-[4/3] w-full rounded-xl bg-gray-100 object-contain" />;
   }
   return (
     <div className={`flex ${tall ? "aspect-[3/2]" : "aspect-[4/3]"} items-center justify-center rounded-xl bg-gradient-to-br ${sport?.color ?? "from-gray-300 to-gray-500"} text-6xl`}>
