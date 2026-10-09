@@ -73,7 +73,7 @@ export function ProfileForm({ profile, from, email }: { profile: FullProfile | n
 
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" name="agree" required defaultChecked={!!profile?.agreedAt} className="mt-1" />
-        <span>我同意本站使用我填寫的資料進行帳號審核與聯絡，並同意我上傳且通過審核的作品與公開資料展示在本站。 <span className="text-red-600">*</span></span>
+        <span>我已閱讀並同意<a href="/terms" target="_blank" className="underline">服務條款與作品授權</a>及<a href="/privacy" target="_blank" className="underline">隱私權政策</a>，同意本站使用我填寫的資料進行審核與聯絡，並將通過審核的作品與公開資料展示在本站。 <span className="text-red-600">*</span></span>
       </label>
 
       <button className="rounded-lg bg-black px-6 py-2.5 text-white">儲存資料</button>

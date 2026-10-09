@@ -32,7 +32,11 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t py-8 text-center text-sm text-gray-500">
-      © 2026 National Games・全台灣運動攝影師作品平台
+      <p>© 2026 National Games・全台灣運動攝影師作品平台</p>
+      <p className="mt-2 flex justify-center gap-4">
+        <Link href="/terms" className="underline">服務條款</Link>
+        <Link href="/privacy" className="underline">隱私權政策</Link>
+      </p>
     </footer>
   );
 }
