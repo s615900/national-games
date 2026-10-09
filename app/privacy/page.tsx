@@ -1,6 +1,6 @@
 export const metadata = { title: "隱私權政策｜National Games" };
 
-// 草稿：正式上線前請由站方確認內容，並填入聯絡方式
+// 暫用版本（2026-10-09 站方同意先用這版）；之後若要補檢舉下架、未成年人肖像、第三方服務商等內容再修改
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-4 py-10 leading-relaxed">
