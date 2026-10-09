@@ -11,7 +11,7 @@ async function getDb() {
 export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string; avatarUrl?: string };
 // 完整資料（含不公開欄位）：只能給本人和管理員看
 export type FullProfile = Photographer & { realName: string; phone: string; email: string; agreedAt?: Date };
-export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string };
+export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean };
 
 // 能投稿的身分；只有這些人會出現在攝影師頁
 const POSTING_ROLES = ["photographer", "reviewer", "admin"];
@@ -52,6 +52,7 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
     description: d.description ?? "",
     status: d.status ?? "pending",
     rejectReason: d.rejectReason || undefined,
+    resubmitted: !!d.resubmitted,
   }));
 }
 
@@ -125,4 +126,12 @@ export async function getProfile(userId: string) {
   const _id = toId(userId);
   const doc = _id && (await (await getDb()).collection("users").findOne({ _id }, { projection: { avatar: 0 } }));
   return doc ? toFullProfile(doc) : null;
+}
+
+// 編輯用：只拿「自己的」作品，不限審核狀態
+export async function getOwnWork(id: string, userId: string) {
+  const _id = toId(id);
+  if (!_id) return null;
+  const doc = await (await getDb()).collection("works").findOne({ _id, photographerId: userId });
+  return doc ? (await toWorks([doc]))[0] : null;
 }

@@ -61,7 +61,7 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
                 <li key={w.id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start">
                   <div className={`flex h-20 w-28 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${sport?.color ?? "from-gray-300 to-gray-500"} text-3xl`}>{sport?.emoji}</div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-semibold">{w.title}</h3>
+                    <h3 className="flex flex-wrap items-center gap-2 font-semibold">{w.title}{w.status === "pending" && w.resubmitted && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">修改後重新送審</span>}</h3>
                     <p className="mt-1 text-sm text-gray-500">{[sport?.name, w.event || "未填賽事", w.location || "未填地點", w.date].join("・")}</p>
                     <p className="mt-1 text-sm text-gray-500">
                       攝影師：<Link href={`/photographers/${w.photographerId}`} className="text-gray-800 underline">{w.photographerName || "（未命名）"}</Link>

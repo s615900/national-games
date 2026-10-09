@@ -6,9 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guard";
 import { getDb } from "@/lib/mongodb";
 import { parseProfile } from "@/lib/profile";
-import { sports } from "@/lib/sports";
-
-const text = (fd: FormData, key: string, max: number) => String(fd.get(key) ?? "").trim().slice(0, max);
+import { parseWork } from "@/lib/work-form";
 
 // 改自己的資料：身分一律取自登入狀態，不信任表單。填不完整就退回並說明原因
 export async function saveProfile(formData: FormData) {
@@ -31,20 +29,10 @@ export async function saveProfile(formData: FormData) {
 // 新增的作品一律是「待審核」，通過審核才會公開。填錯就退回表單並說明原因
 export async function createWork(formData: FormData) {
   const session = await requireRole("photographer");
-  const sport = text(formData, "sport", 30);
-  const title = text(formData, "title", 50);
-  const date = text(formData, "date", 10);
-  const fail = (msg: string) => redirect(`/dashboard/works/new?error=${encodeURIComponent(msg)}`);
-  if (!title) fail("請填寫作品標題");
-  if (!sports.some((s) => s.slug === sport)) fail("請選擇運動項目");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) fail("請選擇正確的拍攝日期");
+  const result = parseWork(formData);
+  if ("error" in result) redirect(`/dashboard/works/new?error=${encodeURIComponent(result.error)}`);
   await (await getDb()).collection("works").insertOne({
-    title,
-    sport,
-    date,
-    event: text(formData, "event", 50),
-    location: text(formData, "location", 50),
-    description: text(formData, "description", 500),
+    ...result.data,
     photographerId: session.user.id,
     status: "pending",
     createdAt: new Date(),
@@ -52,6 +40,30 @@ export async function createWork(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/review");
   redirect("/dashboard?created=1");
+}
+
+// 修改自己的作品。內容有改動就要重新審核（狀態回到審核中、清掉退回原因）；完全沒改就不動
+export async function updateWork(formData: FormData) {
+  const session = await requireRole("photographer");
+  const id = String(formData.get("id"));
+  if (!ObjectId.isValid(id)) redirect("/dashboard");
+  const result = parseWork(formData);
+  if ("error" in result) redirect(`/dashboard/works/${id}/edit?error=${encodeURIComponent(result.error)}`);
+
+  const works = (await getDb()).collection("works");
+  const _id = new ObjectId(id);
+  const old = await works.findOne({ _id, photographerId: session.user.id }); // 只能改自己的
+  if (!old) redirect("/dashboard");
+  const d = result.data;
+  const changed = (Object.keys(d) as (keyof typeof d)[]).some((k) => (old[k] ?? "") !== d[k]);
+  if (!changed && old.status !== "rejected") redirect("/dashboard?updated=same");
+
+  await works.updateOne(
+    { _id, photographerId: session.user.id },
+    { $set: { ...d, status: "pending", resubmitted: old.status !== "pending" || !!old.resubmitted, updatedAt: new Date() }, $unset: { rejectReason: "", reviewedBy: "", reviewedAt: "" } }
+  );
+  for (const p of ["/dashboard", "/review", "/works", "/photographers", "/"]) revalidatePath(p);
+  redirect(`/dashboard?updated=${old.status === "approved" ? "resubmitted" : "saved"}`);
 }
 
 // 只能刪自己的作品

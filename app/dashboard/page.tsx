@@ -59,6 +59,11 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
       )}
 
       {sp.created && <p role="status" className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">作品已送出，審核通過後就會公開。</p>}
+      {sp.updated && (
+        <p role="status" className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          {sp.updated === "same" ? "內容沒有變動。" : sp.updated === "resubmitted" ? "作品已修改並重新送審，通過前會暫時不公開。" : "作品已修改，等待審核。"}
+        </p>
+      )}
       {!isProfileComplete(profile) && (
         <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           個人資料還沒填完整，<Link href="/dashboard/profile" className="font-medium underline">前往補齊必填欄位</Link>。
@@ -113,6 +118,7 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
                   </div>
                   <div className="flex shrink-0 items-center gap-1 text-sm">
                     {w.status === "approved" && <Link href={`/works/${w.id}`} className={btnGhost}>查看</Link>}
+                    <Link href={`/dashboard/works/${w.id}/edit`} className={w.status === "rejected" ? btnOutline : btnGhost}>{w.status === "rejected" ? "修改並重新送審" : "編輯"}</Link>
                     <details className="relative">
                       <summary className={`${btnGhost} cursor-pointer list-none text-red-600 hover:bg-red-50`}>刪除</summary>
                       <div className="absolute right-0 z-10 mt-1 w-52 rounded-xl border bg-white p-4 shadow-lg">
