@@ -1,4 +1,5 @@
-import { saveAvatar, removeAvatar } from "@/app/dashboard/actions";
+import { removeAvatar } from "@/app/dashboard/actions";
+import { AvatarCropper } from "@/components/AvatarCropper";
 
 // 沒有大頭貼就顯示名字的第一個字
 export function Avatar({ name, src, className = "h-14 w-14 text-xl" }: { name: string; src?: string; className?: string }) {
@@ -16,12 +17,8 @@ export function AvatarEditor({ name, src, from }: { name: string; src?: string; 
       <Avatar name={name} src={src} className="h-24 w-24 text-3xl" />
       <div className="flex-1">
         <h2 className="font-bold">大頭貼</h2>
-        <p className="mt-1 text-sm text-gray-500">JPG、PNG 或 WebP，5MB 以內。系統會自動裁成正方形，建議人像置中。</p>
-        <form action={saveAvatar} className="mt-3 flex flex-wrap items-center gap-2">
-          <input type="hidden" name="from" value={from} />
-          <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required className="max-w-full text-sm file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-50" />
-          <button className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">{src ? "更換大頭貼" : "上傳大頭貼"}</button>
-        </form>
+        <p className="mt-1 text-sm text-gray-500">JPG、PNG 或 WebP。選好圖片後可以自己拖曳調整位置和大小。</p>
+        <AvatarCropper from={from} hasAvatar={!!src} />
         {src && (
           <form action={removeAvatar} className="mt-2">
             <input type="hidden" name="from" value={from} />
