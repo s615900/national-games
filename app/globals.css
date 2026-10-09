@@ -12,6 +12,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Tailwind v4 的預設框線是純黑色，整站改成淺灰比較精緻 */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop {
+    border-color: #e5e7eb;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

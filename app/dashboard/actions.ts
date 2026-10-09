@@ -27,13 +27,16 @@ export async function saveProfile(formData: FormData) {
   redirect(`${from}?saved=1`);
 }
 
-// 新增的作品一律是「待審核」，通過審核才會公開
+// 新增的作品一律是「待審核」，通過審核才會公開。填錯就退回表單並說明原因
 export async function createWork(formData: FormData) {
   const session = await requireRole("photographer");
   const sport = text(formData, "sport", 30);
   const title = text(formData, "title", 50);
   const date = text(formData, "date", 10);
-  if (!title || !sports.some((s) => s.slug === sport) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+  const fail = (msg: string) => redirect(`/dashboard/works/new?error=${encodeURIComponent(msg)}`);
+  if (!title) fail("請填寫作品標題");
+  if (!sports.some((s) => s.slug === sport)) fail("請選擇運動項目");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) fail("請選擇正確的拍攝日期");
   await (await getDb()).collection("works").insertOne({
     title,
     sport,
@@ -47,6 +50,7 @@ export async function createWork(formData: FormData) {
   });
   revalidatePath("/dashboard");
   revalidatePath("/review");
+  redirect("/dashboard?created=1");
 }
 
 // 只能刪自己的作品
