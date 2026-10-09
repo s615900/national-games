@@ -7,9 +7,10 @@ import { getDb } from "@/lib/mongodb";
 import { ROLES } from "@/lib/roles";
 import { getSport } from "@/lib/sports";
 import { ROLE_BADGE, ROLE_LABEL, btnDanger, btnGhost, btnOutline, card } from "@/lib/ui";
-import { setRole, setSuspended } from "./actions";
+import { deleteUser, setRole, setSuspended } from "./actions";
 
 const FILTERS = [["", "全部"], ["photographer_pending", "待核准"], ["photographer", "攝影師"], ["reviewer", "審核員"], ["admin", "管理員"], ["suspended", "已停權"]] as const;
+const fmt = (d?: Date | string) => (d ? new Date(d).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : "—");
 const field = "rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-black focus:ring-2 focus:ring-black/10";
 
 async function AdminUsersPageContent({ searchParams }: PageProps<"/admin/users">) {
@@ -87,6 +88,7 @@ async function AdminUsersPageContent({ searchParams }: PageProps<"/admin/users">
                           {isMe && <span className="text-xs font-normal text-gray-400">（你）</span>}
                         </p>
                         <p className="truncate text-sm text-gray-500">{u.email}</p>
+                        <p className="text-xs text-gray-400">上次登入：{fmt(u.lastLoginAt)}・註冊：{fmt(u.createdAt)}</p>
                       </div>
                     </div>
 
@@ -125,6 +127,17 @@ async function AdminUsersPageContent({ searchParams }: PageProps<"/admin/users">
                             </div>
                           </details>
                         )}
+                        <details className="relative">
+                          <summary className={`${btnGhost} cursor-pointer list-none text-red-600 hover:bg-red-50`}>刪除</summary>
+                          <div className="absolute right-0 z-10 mt-1 w-64 rounded-xl border bg-white p-4 shadow-lg">
+                            <p className="text-sm font-medium text-red-700">永久刪除這個帳號？</p>
+                            <p className="mt-1 text-xs text-gray-500">他的所有作品、照片和相關檢舉會一起刪除，無法復原。若只是想擋住他，請用「停權」。</p>
+                            <form action={deleteUser} className="mt-3">
+                              <input type="hidden" name="id" value={id} />
+                              <button className={`${btnDanger} w-full justify-center`}>確定刪除</button>
+                            </form>
+                          </div>
+                        </details>
                       </div>
                     )}
                   </div>

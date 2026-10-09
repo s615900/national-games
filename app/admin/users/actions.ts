@@ -25,3 +25,17 @@ export async function setSuspended(formData: FormData) {
     .updateOne({ _id: new ObjectId(id) }, { $set: { suspended: formData.get("suspend") === "1" } });
   revalidatePath("/admin/users");
 }
+
+// 永久刪除帳號：連同他的作品、照片和這些作品收到的檢舉一起刪（不能刪自己）
+export async function deleteUser(formData: FormData) {
+  const session = await requireRole("admin");
+  const id = String(formData.get("id"));
+  if (!ObjectId.isValid(id) || id === session.user.id) return;
+  const db = await getDb();
+  const workIds = (await db.collection("works").find({ photographerId: id }, { projection: { _id: 1 } }).toArray()).map((w) => w._id.toString());
+  await db.collection("photos").deleteMany({ $or: [{ ownerId: id }, { workId: { $in: workIds } }] });
+  await db.collection("reports").deleteMany({ workId: { $in: workIds } });
+  await db.collection("works").deleteMany({ photographerId: id });
+  await db.collection("users").deleteOne({ _id: new ObjectId(id) });
+  revalidatePath("/admin/users");
+}
