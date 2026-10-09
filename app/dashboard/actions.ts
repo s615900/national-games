@@ -95,7 +95,7 @@ export async function updateWork(formData: FormData) {
   await savePhotos(id, session.user.id, processed);
   await works.updateOne(
     { _id, photographerId: session.user.id },
-    { $set: { ...d, status: "pending", resubmitted: old.status !== "pending" || !!old.resubmitted, updatedAt: new Date() }, $unset: { rejectReason: "", reviewedBy: "", reviewedAt: "" } }
+    { $set: { ...d, status: "pending", resubmitted: old.status !== "pending" || !!old.resubmitted, updatedAt: new Date() }, $unset: { rejectReason: "", reviewedBy: "", reviewedAt: "", featured: "" } }
   );
   for (const p of ["/dashboard", "/review", "/works", "/photographers", "/"]) revalidatePath(p);
   redirect(`/dashboard?updated=${old.status === "approved" ? "resubmitted" : "saved"}`);

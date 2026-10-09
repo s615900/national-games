@@ -6,7 +6,7 @@ import { listWorksForBackend } from "@/lib/data";
 import { photoUrl } from "@/lib/photos";
 import { getSport } from "@/lib/sports";
 import { WORK_STATUS, btnDanger, btnGhost, btnOutline, card } from "@/lib/ui";
-import { approveWork, rejectWork, unpublishWork } from "./actions";
+import { approveWork, rejectWork, setFeatured, unpublishWork } from "./actions";
 
 async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
   const session = await requireRole("reviewer");
@@ -69,7 +69,7 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
                 <li key={w.id} className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-start">
                   <div className={`flex h-20 w-28 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${sport?.color ?? "from-gray-300 to-gray-500"} text-3xl`}>{sport?.emoji}</div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="flex flex-wrap items-center gap-2 font-semibold">{w.title}{w.status === "pending" && w.resubmitted && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">修改後重新送審</span>}</h3>
+                    <h3 className="flex flex-wrap items-center gap-2 font-semibold">{w.title}{w.featured && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">★ 精選</span>}{w.status === "pending" && w.resubmitted && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">修改後重新送審</span>}</h3>
                     <p className="mt-1 text-sm text-gray-500">{[sport?.name, w.event || "未填賽事", w.location || "未填地點", w.date].join("・")}</p>
                     <p className="mt-1 text-sm text-gray-500">
                       攝影師：<Link href={`/photographers/${w.photographerId}`} className="text-gray-800 underline">{w.photographerName || "（未命名）"}</Link>
@@ -90,6 +90,14 @@ async function ReviewPageContent({ searchParams }: PageProps<"/review">) {
                       <p className="mt-2 text-xs text-amber-700">⚠ 這件作品沒有附照片</p>
                     )}
                     {w.status === "rejected" && w.rejectReason && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"><span className="font-medium">退回原因：</span>{w.rejectReason}</p>}
+
+                    {w.status === "approved" && session.user.role === "admin" && (
+                      <form action={setFeatured} className="mt-3">
+                        <input type="hidden" name="id" value={w.id} />
+                        <input type="hidden" name="featured" value={w.featured ? "0" : "1"} />
+                        <button className={`${btnOutline} ${w.featured ? "border-amber-400 bg-amber-50 text-amber-700" : ""}`}>{w.featured ? "★ 已精選（點擊取消）" : "☆ 設為精選"}</button>
+                      </form>
+                    )}
 
                     {w.status === "approved" && (
                       <details className="group mt-3">

@@ -25,13 +25,13 @@ async function Stats() {
 }
 
 async function FeaturedWorks() {
-  const works = await listWorks({ limit: 8 });
+  const works = await listWorks({ featured: true, limit: 8 });
   if (works.length === 0) {
     return (
       <div className="mt-6 rounded-3xl border-2 border-dashed border-gray-200 bg-gray-50 px-6 py-16 text-center">
         <div className="text-5xl">📷</div>
-        <p className="mt-4 text-lg font-bold">第一批作品即將登場</p>
-        <p className="mt-1 text-sm text-gray-500">是攝影師嗎？成為第一位投稿的人，作品會出現在這裡。</p>
+        <p className="mt-4 text-lg font-bold">精選作品即將登場</p>
+        <p className="mt-1 text-sm text-gray-500">站方挑選的優秀作品會展示在這裡。是攝影師嗎？歡迎投稿。</p>
         <Link href="/register" className="mt-6 inline-block rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800">
           註冊投稿
         </Link>

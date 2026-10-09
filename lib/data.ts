@@ -11,7 +11,7 @@ async function getDb() {
 export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string; avatarUrl?: string };
 // 完整資料（含不公開欄位）：只能給本人和管理員看
 export type FullProfile = Photographer & { realName: string; phone: string; email: string; agreedAt?: Date };
-export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean; photos: { id: string; width: number; height: number }[] };
+export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean; featured?: boolean; photos: { id: string; width: number; height: number }[] };
 
 // 能投稿的身分；只有這些人會出現在攝影師頁
 const POSTING_ROLES = ["photographer", "reviewer", "admin"];
@@ -61,6 +61,7 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
     status: d.status ?? "pending",
     rejectReason: d.rejectReason || undefined,
     resubmitted: !!d.resubmitted,
+    featured: !!d.featured,
     photos: byWork.get(d._id.toString()) ?? [],
   }));
 }
@@ -68,9 +69,10 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // 公開頁面只顯示審核通過（status = approved）的作品
-export async function listWorks(opts: { sport?: string; q?: string; photographerId?: string; limit?: number } = {}) {
+export async function listWorks(opts: { sport?: string; q?: string; photographerId?: string; featured?: boolean; limit?: number } = {}) {
   const filter: Document = { status: "approved" };
   if (opts.sport) filter.sport = opts.sport;
+  if (opts.featured) filter.featured = true;
   if (opts.photographerId) filter.photographerId = opts.photographerId;
   if (opts.q) {
     const re = { $regex: escapeRegex(opts.q), $options: "i" };
