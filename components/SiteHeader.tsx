@@ -25,6 +25,7 @@ export function SiteHeader() {
         <nav className="flex items-center gap-4 text-sm sm:gap-6">
           <Link href="/works" className="hover:underline">作品集</Link>
           <Link href="/photographers" className="hover:underline">攝影師</Link>
+          <Link href="/events" className="hover:underline">賽事</Link>
           <Suspense fallback={<span className="rounded-lg bg-gray-200 px-3 py-1.5 text-transparent">登入　註冊</span>}><AuthLink /></Suspense>
         </nav>
       </div>
