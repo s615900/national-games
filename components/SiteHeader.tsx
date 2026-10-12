@@ -26,7 +26,7 @@ export function SiteHeader() {
         <NavMenu>
           <Link href="/works" className="hover:underline">作品集</Link>
           <Link href="/photographers" className="hover:underline">攝影師</Link>
-          <Link href="/events" className="hover:underline">賽事</Link>
+          <Link href="/events" className="hover:underline">賽事列表</Link>
           <Suspense fallback={<span className="rounded-lg bg-gray-200 px-3 py-1.5 text-transparent">登入　註冊</span>}><AuthLink /></Suspense>
         </NavMenu>
       </div>
