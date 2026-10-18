@@ -11,7 +11,7 @@ async function getDb() {
 export type Photographer = { id: string; name: string; region: string; bio: string; sports: string[]; instagram?: string; facebook?: string; website?: string; organization?: string; experience?: string; gear?: string; avatarUrl?: string };
 // 完整資料（含不公開欄位）：只能給本人和管理員看
 export type FullProfile = Photographer & { realName: string; phone: string; email: string; agreedAt?: Date };
-export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean; featured?: boolean; photos: { id: string; width: number; height: number }[] };
+export type Work = { id: string; title: string; photographerId: string; photographerName: string; sport: string; event: string; date: string; location: string; description: string; status: string; rejectReason?: string; resubmitted?: boolean; featured?: boolean; eventId?: string; likes: number; photos: { id: string; width: number; height: number; takenAt?: string; camera?: string; lens?: string }[] };
 
 // 能投稿的身分；只有這些人會出現在攝影師頁
 const POSTING_ROLES = ["photographer", "reviewer", "admin"];
@@ -47,7 +47,7 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
     ? await db.collection("photos").find({ workId: { $in: workIds } }, { projection: { full: 0, thumb: 0 } }).sort({ order: 1, createdAt: 1 }).toArray()
     : [];
   const byWork = new Map<string, Work["photos"]>();
-  for (const p of photoDocs) byWork.set(p.workId, [...(byWork.get(p.workId) ?? []), { id: p._id.toString(), width: p.width ?? 0, height: p.height ?? 0 }]);
+  for (const p of photoDocs) byWork.set(p.workId, [...(byWork.get(p.workId) ?? []), { id: p._id.toString(), width: p.width ?? 0, height: p.height ?? 0, takenAt: p.exif?.takenAt, camera: p.exif?.camera, lens: p.exif?.lens }]);
   return docs.map((d) => ({
     id: d._id.toString(),
     title: d.title ?? "",
@@ -62,6 +62,8 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
     rejectReason: d.rejectReason || undefined,
     resubmitted: !!d.resubmitted,
     featured: !!d.featured,
+    eventId: d.eventId || undefined,
+    likes: d.likeCount ?? 0,
     photos: byWork.get(d._id.toString()) ?? [],
   }));
 }
@@ -69,16 +71,18 @@ async function toWorks(docs: Document[]): Promise<Work[]> {
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // 公開頁面只顯示審核通過（status = approved）的作品
-export async function listWorks(opts: { sport?: string; q?: string; photographerId?: string; featured?: boolean; limit?: number } = {}) {
+export async function listWorks(opts: { sport?: string; q?: string; photographerId?: string; featured?: boolean; event?: { id: string; name: string }; sort?: "popular" | "views"; limit?: number } = {}) {
   const filter: Document = { status: "approved" };
   if (opts.sport) filter.sport = opts.sport;
   if (opts.featured) filter.featured = true;
   if (opts.photographerId) filter.photographerId = opts.photographerId;
+  // 賽事頁：作品是從賽事看板選的（eventId 相同），或賽事名稱填得一樣
+  if (opts.event) filter.$or = [{ eventId: opts.event.id }, { event: opts.event.name }];
   if (opts.q) {
     const re = { $regex: escapeRegex(opts.q), $options: "i" };
-    filter.$or = [{ title: re }, { event: re }, { location: re }];
+    filter.$and = [{ $or: [{ title: re }, { event: re }, { location: re }] }];
   }
-  const cursor = (await getDb()).collection("works").find(filter).sort({ createdAt: -1 });
+  const cursor = (await getDb()).collection("works").find(filter).sort(opts.sort === "popular" ? { likeCount: -1, createdAt: -1 } : opts.sort === "views" ? { viewCount: -1, likeCount: -1, createdAt: -1 } : { createdAt: -1 });
   if (opts.limit) cursor.limit(opts.limit);
   return toWorks(await cursor.toArray());
 }
@@ -145,4 +149,49 @@ export async function getOwnWork(id: string, userId: string) {
   if (!_id) return null;
   const doc = await (await getDb()).collection("works").findOne({ _id, photographerId: userId });
   return doc ? (await toWorks([doc]))[0] : null;
+}
+
+export type PhotographerStats = {
+  works: number;
+  photos: number;
+  likes: number;
+  sports: { sport: string; count: number }[]; // 各運動項目的作品數，多的排前面
+  gear: { camera: string; count: number }[]; // 依 EXIF 統計各機身的照片數
+  lenses: { lens: string; count: number }[];
+};
+
+// 攝影師個人頁的統計：只算已公開的作品
+export async function getPhotographerStats(photographerId: string): Promise<PhotographerStats> {
+  const db = await getDb();
+  const works = await db.collection("works").find({ photographerId, status: "approved" }, { projection: { sport: 1, likeCount: 1 } }).toArray();
+  const bySport = new Map<string, number>();
+  let likes = 0;
+  for (const w of works) {
+    bySport.set(w.sport, (bySport.get(w.sport) ?? 0) + 1);
+    likes += w.likeCount ?? 0;
+  }
+  const workIds = works.map((w) => w._id.toString());
+  const photoCol = db.collection("photos");
+  const group = (field: string) => photoCol.aggregate<{ _id: string; count: number }>([
+    { $match: { workId: { $in: workIds }, [field]: { $exists: true, $ne: "" } } },
+    { $group: { _id: `$${field}`, count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 5 },
+  ]).toArray();
+  const [photos, gear, lenses] = workIds.length
+    ? await Promise.all([photoCol.countDocuments({ workId: { $in: workIds } }), group("exif.camera"), group("exif.lens")])
+    : [0, [], []];
+  return {
+    works: works.length,
+    photos,
+    likes,
+    sports: [...bySport.entries()].map(([sport, count]) => ({ sport, count })).sort((a, b) => b.count - a.count),
+    gear: gear.map((g) => ({ camera: g._id, count: g.count })),
+    lenses: lenses.map((g) => ({ lens: g._id, count: g.count })),
+  };
+}
+
+// 首頁輪播：點擊次數最多的作品（只取有照片的）；還沒有點擊紀錄時就依按讚數、最新排序
+export async function listTopViewed(limit = 5) {
+  return (await listWorks({ sort: "views", limit: limit * 4 })).filter((w) => w.photos.length > 0).slice(0, limit);
 }

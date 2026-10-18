@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { WorkForm } from "@/components/WorkForm";
+import { listAssistEvents } from "@/lib/event-board";
 import { getOwnWork } from "@/lib/data";
 import { requireRole } from "@/lib/guard";
 import { WORK_STATUS } from "@/lib/ui";
@@ -38,7 +39,7 @@ async function EditWorkContent({ params, searchParams }: PageProps<"/dashboard/w
       {error && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <div className="mt-6 max-w-3xl">
-        <WorkForm action={updateWork} work={work} submitLabel={work.status === "pending" ? "儲存修改" : "儲存並重新送審"} />
+        <WorkForm action={updateWork} work={work} submitLabel={work.status === "pending" ? "儲存修改" : "儲存並重新送審"} events={await listAssistEvents()} />
       </div>
     </main>
   );

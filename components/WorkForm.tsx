@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExifAssist, type AssistEvent } from "@/components/ExifAssist";
 import { PhotoPicker } from "@/components/PhotoPicker";
 import type { Work } from "@/lib/data";
 import { PHOTO_LIMITS, photoUrl } from "@/lib/photos";
@@ -17,7 +18,7 @@ function Field({ label, required, hint, children }: { label: string; required?: 
 }
 
 // 新增與修改作品共用的表單；有帶 work 就是修改
-export function WorkForm({ action, work, submitLabel }: { action: (fd: FormData) => Promise<void>; work?: Work; submitLabel: string }) {
+export function WorkForm({ action, work, submitLabel, events = [] }: { action: (fd: FormData) => Promise<void>; work?: Work; submitLabel: string; events?: AssistEvent[] }) {
   const existing = work?.photos ?? [];
   return (
     <form action={action} className="space-y-8 rounded-2xl border bg-white p-6 shadow-sm">
@@ -69,6 +70,7 @@ export function WorkForm({ action, work, submitLabel }: { action: (fd: FormData)
           </div>
         )}
         <PhotoPicker max={Math.max(0, PHOTO_LIMITS.perWork - existing.length)} />
+        <ExifAssist events={events} initialEventId={work?.eventId} />
       </section>
 
       <div className="flex items-center gap-3 border-t pt-6">

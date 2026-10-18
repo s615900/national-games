@@ -5,6 +5,7 @@ import { signOut } from "@/auth";
 import { Avatar } from "@/components/Avatar";
 import { isProfileComplete } from "@/components/ProfileForm";
 import { getProfile, listWorksForBackend } from "@/lib/data";
+import { getDb } from "@/lib/mongodb";
 import { requireRole } from "@/lib/guard";
 import { hasRole } from "@/lib/roles";
 import { getSport } from "@/lib/sports";
@@ -21,7 +22,11 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
   if (role === "photographer_pending") redirect("/pending");
   const sp = await searchParams;
   const filter = typeof sp.status === "string" && sp.status in STATUS ? sp.status : "";
-  const [profile, works] = await Promise.all([getProfile(session.user.id), listWorksForBackend({ photographerId: session.user.id })]);
+  const [profile, works, unreadInquiries] = await Promise.all([
+    getProfile(session.user.id),
+    listWorksForBackend({ photographerId: session.user.id }),
+    getDb().then((db) => db.collection("inquiries").countDocuments({ photographerId: session.user.id, read: false })),
+  ]);
 
   const count = (s: string) => works.filter((w) => w.status === s).length;
   const shown = filter ? works.filter((w) => w.status === filter) : works;
@@ -43,6 +48,9 @@ async function DashboardPageContent({ searchParams }: PageProps<"/dashboard">) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/dashboard/works/new" className={btnPrimary}>＋ 新增作品</Link>
+          <Link href="/dashboard/inquiries" className={btnOutline}>
+            原圖洽詢{unreadInquiries > 0 && <span className="rounded-full bg-red-600 px-1.5 text-xs text-white">{unreadInquiries}</span>}
+          </Link>
           {profile && <Link href={`/photographers/${profile.id}`} className={btnOutline}>我的公開頁面</Link>}
           <Link href="/dashboard/profile" className={btnOutline}>編輯個人資料</Link>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>

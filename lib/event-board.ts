@@ -23,3 +23,8 @@ export async function listBoardEvents(): Promise<BoardEvent[]> {
     return [];
   }
 }
+
+// 作品表單用：只留比對需要的欄位，不要把整份清單的多餘資料送到瀏覽器
+export async function listAssistEvents() {
+  return (await listBoardEvents()).map(({ id, name, sportName, startDate, endDate, location, county }) => ({ id, name, sportName, startDate, endDate, location, county }));
+}

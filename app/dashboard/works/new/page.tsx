@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guard";
 import { WorkForm } from "@/components/WorkForm";
+import { listAssistEvents } from "@/lib/event-board";
 import { createWork } from "../../actions";
 
 async function NewWorkContent({ searchParams }: PageProps<"/dashboard/works/new">) {
@@ -20,7 +21,7 @@ async function NewWorkContent({ searchParams }: PageProps<"/dashboard/works/new"
       {error && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_280px]">
-        <WorkForm action={createWork} submitLabel="送出審核" />
+        <WorkForm action={createWork} submitLabel="送出審核" events={await listAssistEvents()} />
 
         <aside className="h-fit rounded-2xl border bg-gray-50 p-5 text-sm">
           <h2 className="font-bold">審核流程</h2>

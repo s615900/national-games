@@ -35,6 +35,8 @@ export async function deleteUser(formData: FormData) {
   const workIds = (await db.collection("works").find({ photographerId: id }, { projection: { _id: 1 } }).toArray()).map((w) => w._id.toString());
   await db.collection("photos").deleteMany({ $or: [{ ownerId: id }, { workId: { $in: workIds } }] });
   await db.collection("reports").deleteMany({ workId: { $in: workIds } });
+  await db.collection("likes").deleteMany({ workId: { $in: workIds } });
+  await db.collection("inquiries").deleteMany({ workId: { $in: workIds } });
   await db.collection("works").deleteMany({ photographerId: id });
   await db.collection("users").deleteOne({ _id: new ObjectId(id) });
   revalidatePath("/admin/users");

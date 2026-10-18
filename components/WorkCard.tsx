@@ -35,7 +35,7 @@ export function WorkCard({ work }: { work: Work }) {
         <WorkThumb work={work} />
       </div>
       <h3 className="mt-2 font-semibold">{work.title}</h3>
-      <p className="text-sm text-gray-500">{work.photographerName}・{work.event}</p>
+      <p className="text-sm text-gray-500">{work.photographerName}・{work.event}{work.likes > 0 && <span className="ml-1 text-red-500">♥ {work.likes}</span>}</p>
     </Link>
   );
 }

@@ -18,6 +18,9 @@ async function EventsContent() {
     if (name) groups.set(name, [...(groups.get(name) ?? []), w]);
   }
   const events = [...groups.entries()];
+  // 賽事看板的賽事每場都有自己的作品頁；用 eventId 或名稱對應作品數
+  const worksOf = (e: { id: string; name: string }) => works.filter((w) => w.eventId === e.id || w.event.trim() === e.name).length;
+  const boardByName = new Map(board.map((e) => [e.name, e]));
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
@@ -33,13 +36,13 @@ async function EventsContent() {
         <ul className="mt-4 divide-y rounded-2xl border">
           {upcoming.map((e) => (
             <li key={e.id}>
-              <a href={e.url} target="_blank" rel="noopener noreferrer" className="flex flex-col gap-1 px-4 py-3 transition hover:bg-gray-50 sm:flex-row sm:items-center sm:gap-4">
+              <Link href={`/events/${e.id}`} className="flex flex-col gap-1 px-4 py-3 transition hover:bg-gray-50 sm:flex-row sm:items-center sm:gap-4">
                 <span className="w-56 shrink-0 font-mono text-sm text-orange-600">
                   {e.startDate === e.endDate ? e.startDate : `${e.startDate} ~ ${e.endDate.slice(5)}`}
                 </span>
                 <span className="font-semibold">{e.name}</span>
-                <span className="text-sm text-gray-500 sm:ml-auto">{[e.sportName, e.county].filter(Boolean).join("・")}</span>
-              </a>
+                <span className="text-sm text-gray-500 sm:ml-auto">{[e.sportName, e.county].filter(Boolean).join("・")}{worksOf(e) > 0 && <span className="ml-2 font-medium text-orange-600">📷 {worksOf(e)}</span>}</span>
+              </Link>
             </li>
           ))}
         </ul>
@@ -57,8 +60,9 @@ async function EventsContent() {
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {events.map(([name, list]) => {
             const cover = list.find((w) => w.photos[0])?.photos[0];
+            const linked = boardByName.get(name) ?? board.find((e) => list.some((w) => w.eventId === e.id));
             return (
-              <Link key={name} href={`/works?q=${encodeURIComponent(name)}`} className="group overflow-hidden rounded-2xl border transition hover:shadow-lg">
+              <Link key={name} href={linked ? `/events/${linked.id}` : `/works?q=${encodeURIComponent(name)}`} className="group overflow-hidden rounded-2xl border transition hover:shadow-lg">
                 {cover ? (
                   <img src={photoUrl(cover.id, "thumb")} alt={name} loading="lazy" className="aspect-[16/9] w-full bg-gray-100 object-cover transition group-hover:scale-105" />
                 ) : (

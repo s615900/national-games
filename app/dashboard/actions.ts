@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/guard";
 import { getDb } from "@/lib/mongodb";
 import { parseProfile } from "@/lib/profile";
+import { parsePhotoMeta } from "@/lib/exif";
 import { checkQuota, processPhoto, savePhotos, uploadedFiles } from "@/lib/photos";
 import { parseWork } from "@/lib/work-form";
 
@@ -51,8 +52,10 @@ export async function createWork(formData: FormData) {
 
 // 讀取並處理上傳的照片；任何一張有問題就整批退回（錯誤訊息直接給使用者看）
 async function readPhotos(fd: FormData) {
+  const files = uploadedFiles(fd);
+  const meta = parsePhotoMeta(fd, files.length);
   const out = [];
-  for (const f of uploadedFiles(fd)) out.push(await processPhoto(f));
+  for (const [i, f] of files.entries()) out.push({ ...(await processPhoto(f)), exif: meta[i] });
   return out;
 }
 
@@ -112,6 +115,8 @@ export async function deleteWork(formData: FormData) {
   if (deletedCount) {
     await db.collection("photos").deleteMany({ workId: id });
     await db.collection("reports").deleteMany({ workId: id });
+    await db.collection("likes").deleteMany({ workId: id });
+    await db.collection("inquiries").deleteMany({ workId: id });
   }
   revalidatePath("/dashboard");
   revalidatePath("/works");

@@ -1,5 +1,6 @@
 import { Binary } from "mongodb";
 import sharp from "sharp";
+import type { PhotoExif } from "@/lib/exif";
 import { getDb } from "@/lib/mongodb";
 
 // ── 照片空間上限（要調整就改這裡）──
@@ -12,7 +13,7 @@ export const PHOTO_LIMITS = {
   siteTotalBytes: 512 * 1024 * 1024, // Atlas 免費版總容量，只用來顯示
 };
 
-export type ProcessedPhoto = { full: Buffer; thumb: Buffer; width: number; height: number };
+export type ProcessedPhoto = { full: Buffer; thumb: Buffer; width: number; height: number; exif?: PhotoExif };
 
 // 伺服器自己重新處理圖片：不直接存使用者給的檔案（可能是偽裝成圖片的東西）
 export async function processPhoto(file: File): Promise<ProcessedPhoto> {
@@ -86,7 +87,7 @@ export async function savePhotos(workId: string, ownerId: string, list: Processe
   let order = (last?.order ?? 0) + 1;
   const now = new Date();
   await col.insertMany(
-    list.map((p) => ({ workId, ownerId, full: new Binary(p.full), thumb: new Binary(p.thumb), width: p.width, height: p.height, bytes: p.full.length + p.thumb.length, order: order++, createdAt: now }))
+    list.map((p) => ({ workId, ownerId, full: new Binary(p.full), thumb: new Binary(p.thumb), width: p.width, height: p.height, ...(p.exif && Object.keys(p.exif).length ? { exif: p.exif } : {}), bytes: p.full.length + p.thumb.length, order: order++, createdAt: now }))
   );
 }
 

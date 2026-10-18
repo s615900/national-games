@@ -1,10 +1,36 @@
 "use client";
 import { useRef, useState } from "react";
+import type { PhotoExif } from "@/lib/exif";
 
 const MAX_EDGE = 1600;
 const MAX_TOTAL = 5 * 1024 * 1024; // 一次送出的總大小（伺服器 Server Action 上限 6MB）
 
-type Item = { id: string; url: string; name: string; size: number };
+type Item = { id: string; url: string; name: string; size: number; exif: PhotoExif };
+
+export const PHOTO_EXIF_EVENT = "photo-exif"; // 通知 ExifAssist：目前選的照片有哪些拍攝資訊
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const clean = (s: unknown) => (typeof s === "string" ? s.trim() : "");
+
+// 縮圖會把 EXIF 洗掉，所以要在縮圖「之前」從原檔讀拍攝時間與器材；讀不到（沒有 EXIF）就當作沒有
+async function readExif(file: File): Promise<PhotoExif> {
+  try {
+    const exifr = (await import("exifr")).default;
+    const t = await exifr.parse(file, ["DateTimeOriginal", "Make", "Model", "LensModel"]);
+    if (!t) return {};
+    const out: PhotoExif = {};
+    const d = t.DateTimeOriginal;
+    if (d instanceof Date && !Number.isNaN(d.getTime())) out.takenAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const make = clean(t.Make), model = clean(t.Model);
+    // 很多機身的 Model 已經包含廠牌（例如 "Canon EOS R5"），不要重複
+    const camera = model.toLowerCase().startsWith(make.split(" ")[0].toLowerCase()) ? model : `${make} ${model}`.trim();
+    if (camera) out.camera = camera.slice(0, 60);
+    if (clean(t.LensModel)) out.lens = clean(t.LensModel).slice(0, 60);
+    return out;
+  } catch {
+    return {};
+  }
+}
 
 // 在瀏覽器裡先把照片縮小（長邊 1600px、webp），上傳更快，也不會超過伺服器的大小限制
 async function shrink(file: File): Promise<File> {
@@ -28,6 +54,7 @@ export function PhotoPicker({ max }: { max: number }) {
   const real = useRef<HTMLInputElement>(null); // 真正跟著表單送出的欄位（name="photos"）
 
   function sync(list: Item[]) {
+    window.dispatchEvent(new CustomEvent<PhotoExif[]>(PHOTO_EXIF_EVENT, { detail: list.map((i) => i.exif) }));
     const dt = new DataTransfer();
     for (const i of list) dt.items.add(files.current.get(i.id)!);
     if (real.current) real.current.files = dt.files;
@@ -43,12 +70,13 @@ export function PhotoPicker({ max }: { max: number }) {
       for (const f of picked) {
         if (list.length >= max) { setError(`最多再加 ${max} 張`); break; }
         if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { setError("只能選 JPG、PNG 或 WebP 圖片"); continue; }
+        const exif = await readExif(f);
         const small = await shrink(f);
         const total = list.reduce((n, i) => n + i.size, 0) + small.size;
         if (total > MAX_TOTAL) { setError("這次選的照片總量太大，請分次儲存或減少張數"); break; }
         const id = crypto.randomUUID();
         files.current.set(id, small);
-        list = [...list, { id, url: URL.createObjectURL(small), name: f.name, size: small.size }];
+        list = [...list, { id, url: URL.createObjectURL(small), name: f.name, size: small.size, exif }];
       }
     } catch {
       setError("有照片無法處理，請換一張試試");
@@ -68,6 +96,7 @@ export function PhotoPicker({ max }: { max: number }) {
   return (
     <div>
       <input ref={real} type="file" name="photos" multiple className="hidden" tabIndex={-1} aria-hidden />
+      <input type="hidden" name="photoMeta" value={JSON.stringify(items.map((i) => i.exif))} />
       {items.length > 0 && (
         <ul className="mb-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
           {items.map((i) => (

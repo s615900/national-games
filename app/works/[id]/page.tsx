@@ -1,11 +1,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { InquiryButton } from "@/components/InquiryButton";
+import { ViewCounter } from "@/components/ViewCounter";
+import { LikeButton } from "@/components/LikeButton";
 import { ReportButton } from "@/components/ReportButton";
 import { WorkCard, WorkThumb } from "@/components/WorkCard";
 import { getWork, listWorks } from "@/lib/data";
+import { hasLiked } from "@/lib/likes";
 import { photoUrl } from "@/lib/photos";
 import { getSport } from "@/lib/sports";
+import { getViewerKey } from "@/lib/viewer";
 
 async function WorkPageContent({ params }: PageProps<"/works/[id]">) {
   const { id } = await params;
@@ -14,8 +19,15 @@ async function WorkPageContent({ params }: PageProps<"/works/[id]">) {
   const sport = getSport(work.sport);
   const more = (await listWorks({ photographerId: work.photographerId, limit: 5 })).filter((w) => w.id !== work.id).slice(0, 4);
 
+  const liked = await hasLiked(work.id, (await getViewerKey()).key);
+  const exifLine = [...new Set(work.photos.map((p) => p.camera).filter(Boolean))].join("、");
+  const lensLine = [...new Set(work.photos.map((p) => p.lens).filter(Boolean))].join("、");
+  const takenAt = work.photos.find((p) => p.takenAt)?.takenAt?.replace("T", " ");
+  const eventHref = work.eventId ? `/events/${work.eventId}` : undefined;
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
+      <ViewCounter workId={work.id} />
       <Link href="/works" className="text-sm text-gray-500 hover:underline">← 回作品列表</Link>
       <div className="mt-4"><WorkThumb work={work} tall /></div>
       {work.photos.length > 1 && (
@@ -31,13 +43,19 @@ async function WorkPageContent({ params }: PageProps<"/works/[id]">) {
         </ul>
       )}
       <h1 className="mt-6 text-2xl font-bold">{work.title}</h1>
-      <p className="mt-1 text-gray-500">{sport?.emoji} {sport?.name}・{work.event}</p>
+      <p className="mt-1 text-gray-500">{sport?.emoji} {sport?.name}・{eventHref ? <Link href={eventHref} className="underline">{work.event}</Link> : work.event}</p>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
         <div><dt className="text-gray-500">拍攝日期</dt><dd>{work.date}</dd></div>
         <div><dt className="text-gray-500">地點</dt><dd>{work.location}</dd></div>
+        {takenAt && <div><dt className="text-gray-500">拍攝時間</dt><dd>{takenAt}</dd></div>}
+        {exifLine && <div><dt className="text-gray-500">器材</dt><dd>{exifLine}{lensLine && <span className="block text-gray-500">{lensLine}</span>}</dd></div>}
         <div><dt className="text-gray-500">攝影師</dt><dd><Link className="underline" href={`/photographers/${work.photographerId}`}>{work.photographerName}</Link></dd></div>
       </dl>
       <p className="mt-6 leading-relaxed">{work.description}</p>
+      <div className="mt-6 flex flex-wrap items-start gap-3">
+        <LikeButton workId={work.id} initialLiked={liked} initialCount={work.likes} />
+        <InquiryButton workId={work.id} photographerName={work.photographerName} />
+      </div>
       <ReportButton workId={work.id} />
       {more.length > 0 && (
         <section className="mt-12">
